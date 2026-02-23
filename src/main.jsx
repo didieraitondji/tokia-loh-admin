@@ -12,13 +12,14 @@ import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
 import VillesPage from './pages/VillesPage';
 import NotificationsPage from './pages/NotificationsPage';
-import PublishPage from './pages/ProfilePage';
+import PublishPage from './pages/PublishPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import CategoriesPage from './pages/CategoriesPage';
 import OrdersPage from './pages/OrdersPage';
 import ClientsPage from './pages/ClientsPage';
+
 
 // importation du hooks de gestion du thème
 import useTheme from './hooks/useTheme';
@@ -52,6 +53,7 @@ const App = () => {
   );
 };
 
+// rendu dans le dom principal
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <StrictMode>

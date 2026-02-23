@@ -116,7 +116,7 @@ const TopBar = ({ onMenuToggle, showSearch = true }) => {
                     {/* Dropdown notifications */}
                     {notifOpen && (
                         <div className="
-                            absolute right-0 top-12 w-80 z-50
+                            absolute right-0 top-12 w-60 sm:w-80 z-50
                             bg-neutral-0 dark:bg-neutral-0
                             border border-neutral-4 dark:border-neutral-4
                             rounded-3 shadow-lg overflow-hidden
