@@ -204,7 +204,7 @@ const TopBar = ({ onMenuToggle, showSearch = true }) => {
                             rounded-3 shadow-lg overflow-hidden
                         ">
                             <button
-                                onClick={() => { navigate('/settings'); setUserMenuOpen(false); }}
+                                onClick={() => { navigate('/profile'); setUserMenuOpen(false); }}
                                 className="
                                     flex items-center gap-3 w-full px-4 py-2.5
                                     text-xs font-poppins text-neutral-7 dark:text-neutral-7

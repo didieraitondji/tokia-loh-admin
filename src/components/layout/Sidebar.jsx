@@ -3,7 +3,8 @@ import { NavLink, useNavigate } from 'react-router';
 import {
     LayoutDashboard, Package, Grid2X2, ShoppingCart,
     Users, MapPin, Bell, BarChart2, Settings,
-    LogOut, ChevronLeft, ChevronRight
+    LogOut, ChevronLeft, ChevronRight,
+    Rss
 } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 
@@ -19,7 +20,7 @@ const navMain = [
 
 const navSecondary = [
     { to: '/notifications', icon: Bell, label: 'Notifications' },
-    { to: '/publish', icon: Bell, label: 'Publicité' },
+    { to: '/publish', icon: Rss, label: 'Publicité' }, // pour la partie publicité icon rss
     { to: '/reports', icon: BarChart2, label: 'Rapports' },
     { to: '/settings', icon: Settings, label: 'Paramètres' },
 ];
