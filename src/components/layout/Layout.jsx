@@ -22,7 +22,7 @@ const Layout = ({ children, showSearch = true }) => {
             {/* ── Overlay mobile (fond sombre derrière la sidebar) ── */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-8/60 z-20 md:hidden"
+                    className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-20 md:hidden"
                     onClick={() => setMobileOpen(false)}
                 />
             )}

@@ -8,6 +8,7 @@ import RecentOrders from '../components/dashboard/RecentOrders';
 import LowStockList from '../components/dashboard/LowStockList';
 import SalesChart from '../components/dashboard/SalesChart';
 import TopCities from '../components/dashboard/TopCities';
+import DateRangeFilter from '../components/dashboard/DateRangeFilter';
 
 // Données mock CA — à remplacer par l'API
 const CA_DATA = {
@@ -24,19 +25,84 @@ const CA_FILTERS = [
 
 const DashboardPage = () => {
     const [caFilter, setCaFilter] = useState('day');
+
+    // États pour les filtres de date
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [activeFilter, setActiveFilter] = useState('all');
+
     const ca = CA_DATA[caFilter];
+
+    // Fonction pour gérer les changements de date
+    const handleDateChange = (type, value) => {
+        if (type === 'start') {
+            setStartDate(value);
+        } else {
+            setEndDate(value);
+        }
+        // Réinitialiser le filtre rapide quand on sélectionne des dates manuellement
+        setActiveFilter('custom');
+    };
+
+    // Fonction pour gérer les filtres rapides
+    const handleQuickFilter = (filterKey) => {
+        setActiveFilter(filterKey);
+
+        const today = new Date();
+        const formatDate = (date) => date.toISOString().split('T')[0];
+
+        switch (filterKey) {
+            case 'all':
+                setStartDate('');
+                setEndDate('');
+                break;
+            case 'today':
+                setStartDate(formatDate(today));
+                setEndDate(formatDate(today));
+                break;
+            case 'week':
+                const weekAgo = new Date(today);
+                weekAgo.setDate(today.getDate() - 7);
+                setStartDate(formatDate(weekAgo));
+                setEndDate(formatDate(today));
+                break;
+            case 'month':
+                const monthAgo = new Date(today);
+                monthAgo.setMonth(today.getMonth() - 1);
+                setStartDate(formatDate(monthAgo));
+                setEndDate(formatDate(today));
+                break;
+            default:
+                break;
+        }
+
+        // TODO: Appeler l'API avec les dates sélectionnées
+        console.log('Filtrer les données entre', startDate, 'et', endDate);
+    };
 
     return (
         <div className="flex flex-col gap-6">
 
-            {/* ── Titre de page ── */}
-            <div>
-                <h1 className="text-h5 font-bold font-poppins text-neutral-8 dark:text-neutral-8">
-                    Dashboard
-                </h1>
-                <p className="text-xs font-poppins text-neutral-6 dark:text-neutral-6 mt-0.5">
-                    Vue globale de l'activité Tokia-Loh
-                </p>
+            {/* ── Header avec titre + filtres ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* Titre */}
+                <div>
+                    <h1 className="text-h5 font-bold font-poppins text-neutral-8 dark:text-neutral-8">
+                        Dashboard
+                    </h1>
+                    <p className="text-xs font-poppins text-neutral-6 dark:text-neutral-6 mt-0.5">
+                        Vue globale de l'activité Tokia-Loh
+                    </p>
+                </div>
+
+                {/* Filtres de date */}
+                <DateRangeFilter
+                    startDate={startDate}
+                    endDate={endDate}
+                    activeFilter={activeFilter}
+                    onDateChange={handleDateChange}
+                    onQuickFilter={handleQuickFilter}
+                />
             </div>
 
             {/* ── Cards de stats ── */}

@@ -56,10 +56,10 @@ const SalesChart = () => {
 
     return (
         <div className="
-            bg-neutral-0 dark:bg-neutral-0
-            border border-neutral-4 dark:border-neutral-4
-            rounded-3 p-5 flex flex-col gap-5
-        ">
+    bg-neutral-0 dark:bg-neutral-0
+    border border-neutral-4 dark:border-neutral-4
+    rounded-3 p-5 flex flex-col gap-5
+">
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
@@ -74,13 +74,13 @@ const SalesChart = () => {
                                 key={m.key}
                                 onClick={() => setMetric(m.key)}
                                 className={`
-                                    px-3 py-1 rounded-full text-[11px] font-semibold font-poppins
-                                    transition-all duration-200 cursor-pointer
-                                    ${metric === m.key
+                            px-3 py-1 rounded-full text-[11px] font-semibold font-poppins
+                            transition-all duration-200 cursor-pointer
+                            ${metric === m.key
                                         ? 'bg-neutral-0 dark:bg-neutral-2 text-neutral-8 dark:text-neutral-8 shadow-sm'
                                         : 'text-neutral-6 hover:text-neutral-8 dark:hover:text-neutral-8'
                                     }
-                                `}
+                        `}
                             >
                                 {m.label}
                             </button>
@@ -94,13 +94,13 @@ const SalesChart = () => {
                                 key={f.key}
                                 onClick={() => setFilter(f.key)}
                                 className={`
-                                    px-3 py-1 rounded-full text-[11px] font-semibold font-poppins
-                                    transition-all duration-200 cursor-pointer
-                                    ${filter === f.key
+                            px-3 py-1 rounded-full text-[11px] font-semibold font-poppins
+                            transition-all duration-200 cursor-pointer
+                            ${filter === f.key
                                         ? 'bg-primary-1 text-neutral-0 shadow-sm'
                                         : 'text-neutral-6 hover:text-neutral-8 dark:hover:text-neutral-8'
                                     }
-                                `}
+                        `}
                             >
                                 {f.label}
                             </button>
@@ -119,16 +119,28 @@ const SalesChart = () => {
                         </linearGradient>
                     </defs>
 
-                    <CartesianGrid strokeDasharray="3 3" stroke="#03172D1A" vertical={false} />
+                    <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="var(--color-neutral-4)"
+                        vertical={false}
+                    />
 
                     <XAxis
                         dataKey="label"
-                        tick={{ fontSize: 11, fontFamily: 'Poppins', fill: '#03172D99' }}
+                        tick={{
+                            fontSize: 11,
+                            fontFamily: 'Poppins',
+                            fill: 'var(--color-neutral-6)'
+                        }}
                         axisLine={false}
                         tickLine={false}
                     />
                     <YAxis
-                        tick={{ fontSize: 11, fontFamily: 'Poppins', fill: '#03172D99' }}
+                        tick={{
+                            fontSize: 11,
+                            fontFamily: 'Poppins',
+                            fill: 'var(--color-neutral-6)'
+                        }}
                         axisLine={false}
                         tickLine={false}
                         tickFormatter={v => metric === 'ca' ? `${(v / 1000).toFixed(0)}k` : v}

@@ -45,7 +45,7 @@ const SettingsMessagesForm = () => {
                     </p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                         {VARIABLES.map(v => (
-                            <span key={v} className="px-2 py-0.5 rounded-full bg-primary-4 text-primary-7 text-[11px] font-mono font-semibold">
+                            <span key={v} className="px-2 py-0.5 rounded-full bg-primary-3 text-neutral-9 text-[11px] font-mono font-semibold">
                                 {v}
                             </span>
                         ))}

@@ -6,7 +6,9 @@ import OrderStatusBadge, { STATUS_CONFIG } from './OrderStatusBadge';
 export const MOCK_ORDERS = [
     {
         id: '#1042', date: '23/06/2025 09:12',
-        client: { firstName: 'Aminata', lastName: 'Koné', phone: '+225 07 00 11 22', city: 'Abidjan' },
+        client: {
+            firstName: 'Aminata', lastName: 'Koné', phone: '+225 07 00 11 22', city: 'Abidjan', latitude: 6.3654, longitude: 2.4183
+        },
         items: [
             { name: 'Robe Ankara Wax', quantity: 1, unitPrice: 15000 },
             { name: 'Bracelet perles coco', quantity: 2, unitPrice: 3500 },
@@ -17,7 +19,7 @@ export const MOCK_ORDERS = [
     },
     {
         id: '#1041', date: '23/06/2025 08:47',
-        client: { firstName: 'Kouadio', lastName: 'Hervé', phone: '+225 05 44 55 66', city: 'Bouaké' },
+        client: { firstName: 'Kouadio', lastName: 'Hervé', phone: '+225 05 44 55 66', city: 'Bouaké', latitude: 6.3654, longitude: 2.4183 },
         items: [{ name: 'Sandales tressées', quantity: 1, unitPrice: 8000 }],
         note: '',
         deliveryFee: 2000,
@@ -25,7 +27,7 @@ export const MOCK_ORDERS = [
     },
     {
         id: '#1040', date: '22/06/2025 17:30',
-        client: { firstName: 'Fatou', lastName: 'Diallo', phone: '+225 01 22 33 44', city: 'Abidjan' },
+        client: { firstName: 'Fatou', lastName: 'Diallo', phone: '+225 01 22 33 44', city: 'Abidjan', latitude: 6.3654, longitude: 2.4183 },
         items: [
             { name: 'Chemise bazin brodée', quantity: 1, unitPrice: 18000 },
             { name: 'Sac en raphia', quantity: 1, unitPrice: 12000 },
@@ -36,7 +38,7 @@ export const MOCK_ORDERS = [
     },
     {
         id: '#1039', date: '22/06/2025 14:10',
-        client: { firstName: 'Jean-Pierre', lastName: 'Aka', phone: '+225 07 88 99 00', city: 'Yamoussoukro' },
+        client: { firstName: 'Jean-Pierre', lastName: 'Aka', phone: '+225 07 88 99 00', city: 'Yamoussoukro', latitude: 6.3654, longitude: 2.4183 },
         items: [{ name: 'Collier wax multicolor', quantity: 1, unitPrice: 5000 }],
         note: '',
         deliveryFee: 1500,
@@ -44,7 +46,7 @@ export const MOCK_ORDERS = [
     },
     {
         id: '#1038', date: '22/06/2025 11:05',
-        client: { firstName: 'Marie', lastName: 'Bamba', phone: '+225 05 66 77 88', city: 'San-Pédro' },
+        client: { firstName: 'Marie', lastName: 'Bamba', phone: '+225 05 66 77 88', city: 'San-Pédro', latitude: 6.3654, longitude: 2.4183 },
         items: [{ name: 'Robe bogolan naturel', quantity: 1, unitPrice: 25000 }],
         note: 'Appeler avant de venir.',
         deliveryFee: 2500,
@@ -52,7 +54,7 @@ export const MOCK_ORDERS = [
     },
     {
         id: '#1037', date: '21/06/2025 16:22',
-        client: { firstName: 'Oumar', lastName: 'Traoré', phone: '+225 01 33 44 55', city: 'Korhogo' },
+        client: { firstName: 'Oumar', lastName: 'Traoré', phone: '+225 01 33 44 55', city: 'Korhogo', latitude: 6.3654, longitude: 2.4183 },
         items: [{ name: 'Bracelet perles coco', quantity: 2, unitPrice: 3500 }],
         note: '',
         deliveryFee: 2000,

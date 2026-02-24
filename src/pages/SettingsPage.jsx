@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Settings, Palette, Megaphone,
-    MessageSquare, Truck, Info
+    Megaphone,
+    MessageSquare, Truck, Info, Shield
 } from 'lucide-react';
-import SettingsGeneralForm from '../components/settings/SettingsGeneralForm';
-import SettingsBrandingForm from '../components/settings/SettingsBrandingForm';
 import SettingsBannersManager from '../components/settings/SettingsBannersManager';
 import SettingsMessagesForm from '../components/settings/SettingsMessagesForm';
 import SettingsDeliveryForm from '../components/settings/SettingsDeliveryForm';
+import SettingsAdminsManager from '../components/settings/SettingsAdminsManager';
 
 const SECTIONS = [
-    { key: 'general', label: 'Général', icon: <Settings size={16} />, component: <SettingsGeneralForm /> },
-    { key: 'branding', label: 'Apparence', icon: <Palette size={16} />, component: <SettingsBrandingForm /> },
     { key: 'banners', label: 'Bannières', icon: <Megaphone size={16} />, component: <SettingsBannersManager /> },
     { key: 'messages', label: 'Messages auto', icon: <MessageSquare size={16} />, component: <SettingsMessagesForm /> },
     { key: 'delivery', label: 'Livraison', icon: <Truck size={16} />, component: <SettingsDeliveryForm /> },
+    { key: 'admins', label: 'Administrateurs', icon: <Shield size={16} />, component: <SettingsAdminsManager /> },
 ];
 
 const SettingsPage = () => {
-    const [activeSection, setActiveSection] = useState('general');
+    const [activeSection, setActiveSection] = useState('messages');
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Paramètres';

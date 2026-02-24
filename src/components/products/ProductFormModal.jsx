@@ -4,27 +4,96 @@ import InputField from '../InputField';
 import Button from '../Button';
 import ProductStatusToggle from './ProductStatusToggle';
 
-// Fonction pour extraire l'ID YouTube
-const getYouTubeId = (url) => {
+// Après les imports, avant MOCK_CATEGORIES
+// Fonction pour obtenir la thumbnail YouTube
+const getYouTubeThumbnail = (url) => {
     const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
     const match = url.match(regExp);
-    return (match && match[7].length === 11) ? match[7] : null;
+    const videoId = (match && match[7].length === 11) ? match[7] : null;
+
+    if (videoId) {
+        return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`; // Qualité moyenne
+        // Alternatives:
+        // maxresdefault.jpg = Haute qualité
+        // hqdefault.jpg = Haute qualité
+        // mqdefault.jpg = Qualité moyenne
+        // sddefault.jpg = Qualité standard
+    }
+    return null;
 };
 
-// Fonction pour extraire l'ID Vimeo
-const getVimeoId = (url) => {
+// Fonction pour obtenir la thumbnail Vimeo
+const getVimeoThumbnail = async (url) => {
     const regExp = /vimeo.*\/(\d+)/i;
     const match = url.match(regExp);
-    return match ? match[1] : null;
+    const videoId = match ? match[1] : null;
+
+    if (videoId) {
+        try {
+            const response = await fetch(`https://vimeo.com/api/v2/video/${videoId}.json`);
+            const data = await response.json();
+            return data[0].thumbnail_large; // ou thumbnail_medium, thumbnail_small
+        } catch (error) {
+            return null;
+        }
+    }
+    return null;
 };
 
-// Fonction pour déterminer le type de vidéo
+// Fonction pour détecter le type de vidéo
 const getVideoType = (url) => {
     if (!url) return null;
     if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
     if (url.includes('vimeo.com')) return 'vimeo';
-    return 'direct'; // URL directe vers un fichier vidéo
+    return 'direct';
 };
+
+
+// Juste avant le composant ProductFormModal
+const VideoThumbnail = ({ url }) => {
+    const [thumbnail, setThumbnail] = React.useState(null);
+    const [error, setError] = React.useState(false);
+    const videoType = getVideoType(url);
+
+    React.useEffect(() => {
+        const loadThumbnail = async () => {
+            if (videoType === 'youtube') {
+                const thumb = getYouTubeThumbnail(url);
+                setThumbnail(thumb);
+            } else if (videoType === 'vimeo') {
+                const thumb = await getVimeoThumbnail(url);
+                setThumbnail(thumb);
+            }
+        };
+
+        loadThumbnail();
+    }, [url, videoType]);
+
+    // Si l'image ne charge pas ou pas de thumbnail
+    if (error || !thumbnail) {
+        return (
+            <div className="w-full h-full bg-neutral-2 dark:bg-neutral-3 flex items-center justify-center">
+                {/* Icône VLC style */}
+                <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" fill="#FF8800" stroke="#FF8800" strokeWidth="1" />
+                    <circle cx="12" cy="12" r="4" fill="white" />
+                    <path d="M12 8L9 14H15L12 8Z" fill="#FF8800" />
+                </svg>
+            </div>
+        );
+    }
+
+    return (
+        <img
+            src={thumbnail}
+            alt="video thumbnail"
+            className="w-full h-full object-cover"
+            onError={() => setError(true)}
+        />
+    );
+};
+
+
 
 // Catégories mock — à remplacer par l'API
 const MOCK_CATEGORIES = ['Robes', 'Chaussures', 'Sacs', 'Bijoux', 'Chemises', 'Accessoires'];
@@ -32,9 +101,6 @@ const MOCK_CATEGORIES = ['Robes', 'Chaussures', 'Sacs', 'Bijoux', 'Chemises', 'A
 const EMPTY_FORM = {
     name: '',
     description: '',
-    descriptionType: 'text',  // 'text' ou 'video'
-    videoUrl: '',             // URL de la vidéo YouTube/Vimeo/externe
-    videoFile: null,          // Fichier vidéo local { file, preview }
     category: '',
     price: '',
     salePrice: '',
@@ -42,7 +108,7 @@ const EMPTY_FORM = {
     active: true,
     featured: false,
     mainImage: null,
-    subImages: [],            // Maintenant infini
+    subImages: [],
 
     // Nouvelles fonctionnalités
     hasSizes: false,          // Switch pour activer les tailles
@@ -50,6 +116,31 @@ const EMPTY_FORM = {
     hasColors: false,         // Switch pour activer les couleurs
     colors: [],               // [{ name: 'Rouge', hex: '#FF0000' }, ...]
 };
+
+
+// Liste de couleurs prédéfinies avec leurs noms en français
+const PRESET_COLORS = [
+    { name: 'Noir', hex: '#000000' },
+    { name: 'Blanc', hex: '#FFFFFF' },
+    { name: 'Gris', hex: '#808080' },
+    { name: 'Rouge', hex: '#EF4444' },
+    { name: 'Rose', hex: '#EC4899' },
+    { name: 'Orange', hex: '#F97316' },
+    { name: 'Jaune', hex: '#EAB308' },
+    { name: 'Vert', hex: '#10B981' },
+    { name: 'Bleu', hex: '#3B82F6' },
+    { name: 'Indigo', hex: '#6366F1' },
+    { name: 'Violet', hex: '#8B5CF6' },
+    { name: 'Marron', hex: '#92400E' },
+    { name: 'Beige', hex: '#D4C5B9' },
+    { name: 'Kaki', hex: '#8D7B68' },
+    { name: 'Marine', hex: '#1E3A8A' },
+    { name: 'Bordeaux', hex: '#7F1D1D' },
+    { name: 'Turquoise', hex: '#14B8A6' },
+    { name: 'Corail', hex: '#FB7185' },
+    { name: 'Or', hex: '#D97706' },
+    { name: 'Argent', hex: '#94A3B8' },
+];
 
 // Calcul automatique du pourcentage de réduction
 const calcDiscount = (price, salePrice) => {
@@ -59,120 +150,7 @@ const calcDiscount = (price, salePrice) => {
     return Math.round(((p - s) / p) * 100);
 };
 
-// Composant de prévisualisation vidéo
-const VideoPreview = ({ videoUrl, videoFile, onRemove }) => {
-    const videoType = getVideoType(videoUrl);
 
-    // Si c'est un fichier local
-    if (videoFile) {
-        return (
-            <div className="relative w-full aspect-video rounded-2 overflow-hidden border border-neutral-4 bg-neutral-1">
-                <video
-                    src={videoFile.preview}
-                    controls
-                    className="w-full h-full object-contain"
-                >
-                    Votre navigateur ne supporte pas la lecture de vidéos.
-                </video>
-                <button
-                    type="button"
-                    onClick={onRemove}
-                    className="absolute top-2 right-2 w-8 h-8 bg-neutral-0/90 rounded-full flex items-center justify-center hover:bg-neutral-0 transition-colors cursor-pointer shadow-lg"
-                >
-                    <Trash2 size={14} className="text-neutral-8" />
-                </button>
-            </div>
-        );
-    }
-
-    // Si c'est YouTube
-    if (videoType === 'youtube') {
-        const videoId = getYouTubeId(videoUrl);
-        if (!videoId) {
-            return (
-                <div className="w-full aspect-video rounded-2 border border-danger-1 bg-danger-5 flex items-center justify-center">
-                    <p className="text-xs text-danger-1 font-semibold">URL YouTube invalide</p>
-                </div>
-            );
-        }
-
-        return (
-            <div className="relative w-full aspect-video rounded-2 overflow-hidden border border-neutral-4">
-                <iframe
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    title="YouTube video preview"
-                    className="w-full h-full"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                />
-                <button
-                    type="button"
-                    onClick={onRemove}
-                    className="absolute top-2 right-2 w-8 h-8 bg-neutral-0/90 rounded-full flex items-center justify-center hover:bg-neutral-0 transition-colors cursor-pointer shadow-lg z-10"
-                >
-                    <Trash2 size={14} className="text-neutral-8" />
-                </button>
-            </div>
-        );
-    }
-
-    // Si c'est Vimeo
-    if (videoType === 'vimeo') {
-        const videoId = getVimeoId(videoUrl);
-        if (!videoId) {
-            return (
-                <div className="w-full aspect-video rounded-2 border border-danger-1 bg-danger-5 flex items-center justify-center">
-                    <p className="text-xs text-danger-1 font-semibold">URL Vimeo invalide</p>
-                </div>
-            );
-        }
-
-        return (
-            <div className="relative w-full aspect-video rounded-2 overflow-hidden border border-neutral-4">
-                <iframe
-                    src={`https://player.vimeo.com/video/${videoId}`}
-                    title="Vimeo video preview"
-                    className="w-full h-full"
-                    frameBorder="0"
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    allowFullScreen
-                />
-                <button
-                    type="button"
-                    onClick={onRemove}
-                    className="absolute top-2 right-2 w-8 h-8 bg-neutral-0/90 rounded-full flex items-center justify-center hover:bg-neutral-0 transition-colors cursor-pointer shadow-lg z-10"
-                >
-                    <Trash2 size={14} className="text-neutral-8" />
-                </button>
-            </div>
-        );
-    }
-
-    // Si c'est une URL directe
-    if (videoType === 'direct') {
-        return (
-            <div className="relative w-full aspect-video rounded-2 overflow-hidden border border-neutral-4 bg-neutral-1">
-                <video
-                    src={videoUrl}
-                    controls
-                    className="w-full h-full object-contain"
-                >
-                    Votre navigateur ne supporte pas la lecture de vidéos.
-                </video>
-                <button
-                    type="button"
-                    onClick={onRemove}
-                    className="absolute top-2 right-2 w-8 h-8 bg-neutral-0/90 rounded-full flex items-center justify-center hover:bg-neutral-0 transition-colors cursor-pointer shadow-lg"
-                >
-                    <Trash2 size={14} className="text-neutral-8" />
-                </button>
-            </div>
-        );
-    }
-
-    return null;
-};
 
 const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
     const [form, setForm] = useState(EMPTY_FORM);
@@ -184,7 +162,6 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
 
     const mainImageRef = useRef(null);
     const subImageRef = useRef(null);
-    const videoFileRef = useRef(null);
 
     const isEdit = !!product;
 
@@ -195,15 +172,6 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
             setErrors({});
         }
     }, [open, product]);
-
-    // Nettoyer les URLs d'objet créées
-    useEffect(() => {
-        return () => {
-            if (form.videoFile?.preview) {
-                URL.revokeObjectURL(form.videoFile.preview);
-            }
-        };
-    }, [form.videoFile]);
 
     // Bloquer le scroll de la page quand la modal est ouverte
     useEffect(() => {
@@ -244,34 +212,6 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
         setShowImageUrlModal(false);
     };
 
-    // Gestion du fichier vidéo local
-    const handleVideoFile = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Vérifier que c'est bien une vidéo
-        if (!file.type.startsWith('video/')) {
-            setErrors(prev => ({ ...prev, videoFile: 'Veuillez sélectionner un fichier vidéo valide' }));
-            return;
-        }
-
-        // Vérifier la taille (max 100MB par exemple)
-        const maxSize = 100 * 1024 * 1024; // 100MB
-        if (file.size > maxSize) {
-            setErrors(prev => ({ ...prev, videoFile: 'Vidéo trop volumineuse (max 100MB)' }));
-            return;
-        }
-
-        const preview = URL.createObjectURL(file);
-        setForm(prev => ({
-            ...prev,
-            videoFile: { file, preview },
-            videoUrl: '' // Réinitialiser l'URL si un fichier est uploadé
-        }));
-
-        if (errors.videoFile) setErrors(prev => ({ ...prev, videoFile: '' }));
-    };
-
     // Gestion des tailles
     const handleAddSize = (size) => {
         if (!form.sizes.includes(size)) {
@@ -302,33 +242,16 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
         }));
     };
 
-    // Valider l'URL de la vidéo en temps réel
-    const isValidVideoUrl = (url) => {
-        if (!url) return null; // null = pas encore d'URL
-        const type = getVideoType(url);
-
-        if (type === 'youtube') {
-            return !!getYouTubeId(url);
-        }
-        if (type === 'vimeo') {
-            return !!getVimeoId(url);
-        }
-        if (type === 'direct') {
-            // Vérifier si l'URL se termine par une extension vidéo
-            return /\.(mp4|webm|ogg|mov|avi)$/i.test(url);
-        }
-
-        return false;
-    };
-
-    // Upload images secondaires (max 4)
-    const handleSubImages = (e) => {
+    const handleSubMedia = (e) => {
         const files = Array.from(e.target.files);
-        const remaining = 4 - form.subImages.length;
-        const toAdd = files.slice(0, remaining).map(file => ({
-            file,
-            preview: URL.createObjectURL(file),
-        }));
+        const toAdd = files.map(file => {
+            const isVideo = file.type.startsWith('video/');
+            return {
+                file,
+                preview: URL.createObjectURL(file),
+                type: isVideo ? 'video' : 'image', // Identifier le type
+            };
+        });
         setForm(prev => ({ ...prev, subImages: [...prev.subImages, ...toAdd] }));
     };
 
@@ -338,26 +261,6 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
             subImages: prev.subImages.filter((_, i) => i !== index),
         }));
     };
-
-    /* const validate = () => {
-        const e = {};
-        if (!form.name.trim()) e.name = 'Nom requis';
-        if (!form.category) e.category = 'Catégorie requise';
-        if (!form.price) e.price = 'Prix requis';
-        if (!form.stock && form.stock !== 0) e.stock = 'Stock requis';
-        if (form.salePrice && parseFloat(form.salePrice) >= parseFloat(form.price)) {
-            e.salePrice = 'Le prix réduit doit être inférieur au prix initial';
-        }
-        if (!form.mainImage) e.mainImage = 'Image principale requise';
-
-        // Validation pour la vidéo
-        if (form.descriptionType === 'video' && !form.videoUrl.trim()) {
-            e.videoUrl = 'URL de vidéo requise';
-        }
-
-        setErrors(e);
-        return Object.keys(e).length === 0;
-    }; */
 
     const validate = () => {
         const e = {};
@@ -369,11 +272,6 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
             e.salePrice = 'Le prix réduit doit être inférieur au prix initial';
         }
         if (!form.mainImage) e.mainImage = 'Image principale requise';
-
-        // Validation pour la vidéo (URL ou fichier requis si mode vidéo)
-        if (form.descriptionType === 'video' && !form.videoUrl.trim() && !form.videoFile) {
-            e.videoUrl = 'Veuillez ajouter une vidéo (fichier ou URL)';
-        }
 
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -390,22 +288,12 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
         // Ajouter tous les champs texte
         formData.append('name', form.name);
         formData.append('description', form.description);
-        formData.append('descriptionType', form.descriptionType);
         formData.append('category', form.category);
         formData.append('price', form.price);
         formData.append('salePrice', form.salePrice);
         formData.append('stock', form.stock);
         formData.append('active', form.active);
         formData.append('featured', form.featured);
-
-        // Ajouter la vidéo
-        if (form.descriptionType === 'video') {
-            if (form.videoFile) {
-                formData.append('videoFile', form.videoFile.file);
-            } else if (form.videoUrl) {
-                formData.append('videoUrl', form.videoUrl);
-            }
-        }
 
         // Ajouter l'image principale
         if (form.mainImage) {
@@ -416,12 +304,15 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
             }
         }
 
-        // Ajouter les images secondaires
-        form.subImages.forEach((img, index) => {
-            if (typeof img === 'string') {
-                formData.append(`subImageUrl_${index}`, img);
+        // Ajouter les médias secondaires (images + vidéos)
+        form.subImages.forEach((media, index) => {
+            if (typeof media === 'string') {
+                // C'est une URL
+                formData.append(`subMediaUrl_${index}`, media);
             } else {
-                formData.append(`subImage_${index}`, img.file);
+                // C'est un fichier
+                const fieldName = media.type === 'video' ? 'subVideo' : 'subImage';
+                formData.append(`${fieldName}_${index}`, media.file);
             }
         });
 
@@ -448,7 +339,7 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-8/60 z-40 backdrop-blur-sm"
+                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-40 backdrop-blur-sm"
                 onClick={onClose}
             />
 
@@ -492,130 +383,14 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
                                 required
                             />
 
-                            {/* Description avec switch texte/vidéo */}
-                            <div className="flex flex-col gap-2">
-                                <label className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
-                                    Description
-                                </label>
-
-                                {/* Switch texte/vidéo */}
-                                <div className="flex gap-2 mb-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setForm(prev => ({ ...prev, descriptionType: 'text' }))}
-                                        className={`px-4 py-2 rounded-full cursor-pointer text-xs font-semibold font-poppins transition-all duration-200 ${form.descriptionType === 'text'
-                                            ? 'bg-primary-1 text-white'
-                                            : 'bg-neutral-2 text-neutral-6 hover:bg-neutral-3'
-                                            }`}
-                                    >
-                                        Texte
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setForm(prev => ({ ...prev, descriptionType: 'video' }))}
-                                        className={`px-4 py-2 rounded-full cursor-pointer text-xs font-semibold font-poppins transition-all duration-200 ${form.descriptionType === 'video'
-                                            ? 'bg-primary-1 text-white'
-                                            : 'bg-neutral-2 text-neutral-6 hover:bg-neutral-3'
-                                            }`}
-                                    >
-                                        Vidéo
-                                    </button>
-                                </div>
-
-                                {form.descriptionType === 'text' ? (
-                                    <InputField
-                                        name="description"
-                                        type="textarea"
-                                        value={form.description}
-                                        onChange={handleChange}
-                                        placeholder="Décrivez le produit..."
-                                    />
-                                ) : (
-                                    <div className="flex flex-col gap-3">
-
-                                        {/* Preview de la vidéo si elle existe */}
-                                        {(form.videoFile || form.videoUrl) && (
-                                            <VideoPreview
-                                                videoUrl={form.videoUrl}
-                                                videoFile={form.videoFile}
-                                                onRemove={() => setForm(prev => ({ ...prev, videoFile: null, videoUrl: '' }))}
-                                            />
-                                        )}
-
-                                        {/* Options d'ajout de vidéo (seulement si aucune vidéo n'est présente) */}
-                                        {!form.videoFile && !form.videoUrl && (
-                                            <>
-                                                {/* Boutons d'upload */}
-                                                <div className="flex gap-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => videoFileRef.current?.click()}
-                                                        className="
-                                flex-1 h-32 rounded-2
-                                border-2 border-dashed border-neutral-4 dark:border-neutral-4
-                                flex flex-col items-center justify-center gap-2
-                                text-neutral-6 hover:border-primary-1 hover:text-primary-1
-                                transition-colors duration-200 cursor-pointer
-                            "
-                                                    >
-                                                        <Upload size={24} />
-                                                        <span className="text-xs font-semibold font-poppins">Fichier vidéo</span>
-                                                        <span className="text-[11px] font-poppins text-neutral-5">
-                                                            MP4, AVI, MOV (max 100MB)
-                                                        </span>
-                                                    </button>
-
-                                                    <div className="flex items-center text-neutral-5">
-                                                        <span className="text-xs font-semibold">OU</span>
-                                                    </div>
-
-                                                    <div className="flex-1 h-32 rounded-2 border-2 border-dashed border-neutral-4 dark:border-neutral-4 flex flex-col items-center justify-center gap-2 p-4">
-                                                        <svg className="w-6 h-6 text-neutral-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                                        </svg>
-                                                        <span className="text-xs font-semibold font-poppins text-neutral-6 text-center">
-                                                            URL vidéo
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Input URL (toujours visible) */}
-                                                <div className="relative">
-                                                    <InputField
-                                                        name="videoUrl"
-                                                        value={form.videoUrl}
-                                                        onChange={handleChange}
-                                                        placeholder="https://www.youtube.com/watch?v=... ou URL directe"
-                                                        hint="YouTube, Vimeo, ou lien direct vers une vidéo"
-                                                    />
-                                                    {form.videoUrl && (
-                                                        <div className="absolute right-3 top-9">
-                                                            {isValidVideoUrl(form.videoUrl) ? (
-                                                                <span className="text-success-1 text-xs">✓ URL valide</span>
-                                                            ) : (
-                                                                <span className="text-danger-1 text-xs">✗ URL invalide</span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Input file caché */}
-                                                <input
-                                                    ref={videoFileRef}
-                                                    type="file"
-                                                    accept="video/*"
-                                                    className="hidden"
-                                                    onChange={handleVideoFile}
-                                                />
-
-                                                {errors.videoFile && (
-                                                    <p className="text-xs text-danger-1">{errors.videoFile}</p>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            <InputField
+                                label="Description"
+                                name="description"
+                                type="textarea"
+                                value={form.description}
+                                onChange={handleChange}
+                                placeholder="Décrivez le produit..."
+                            />
 
                             {/* Catégorie */}
                             <div className="flex flex-col gap-1.5">
@@ -742,11 +517,11 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
                                             type="button"
                                             onClick={() => mainImageRef.current?.click()}
                                             className="
-                        w-32 h-32 rounded-2
-                        border-2 border-dashed border-neutral-4 dark:border-neutral-4
-                        flex flex-col items-center justify-center gap-2
-                        text-neutral-6 hover:border-primary-1 hover:text-primary-1
-                        transition-colors duration-200 cursor-pointer
+                                            w-32 h-32 rounded-2
+                                            border-2 border-dashed border-neutral-4 dark:border-neutral-4
+                                            flex flex-col items-center justify-center gap-2
+                                            text-neutral-6 hover:border-primary-1 hover:text-primary-1
+                                            transition-colors duration-200 cursor-pointer
                     "
                                         >
                                             <Upload size={20} />
@@ -771,35 +546,73 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
                                 {errors.mainImage && <p className="text-xs text-danger-1">{errors.mainImage}</p>}
                             </div>
 
-                            {/* Images secondaires (illimitées) */}
+                            {/* Médias secondaires (illimitées) */}
                             <div className="flex flex-col gap-2">
                                 <label className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
-                                    Images secondaires
+                                    Médias secondaires (images & vidéos)
                                     <span className="text-neutral-6 font-normal ml-1">({form.subImages.length})</span>
                                 </label>
                                 <div className="flex flex-wrap gap-3">
-                                    {form.subImages.map((img, i) => (
-                                        <div key={i} className="relative w-20 h-20 rounded-2 overflow-hidden border border-neutral-4 group">
-                                            <img
-                                                src={typeof img === 'string' ? img : img.preview}
-                                                alt={`sec-${i}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => removeSubImage(i)}
-                                                className="absolute inset-0 bg-neutral-8/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
-                                            >
-                                                <Trash2 size={14} className="text-white" />
-                                            </button>
-                                        </div>
-                                    ))}
+                                    {form.subImages.map((media, i) => {
+                                        // Détecter si c'est une vidéo
+                                        let isVideo = false;
+                                        let isYouTubeVimeo = false;
+
+                                        if (typeof media === 'string') {
+                                            // C'est une URL
+                                            const videoType = getVideoType(media);
+                                            isYouTubeVimeo = videoType === 'youtube' || videoType === 'vimeo';
+                                            isVideo = isYouTubeVimeo || media.match(/\.(mp4|webm|ogg|mov|avi)$/i);
+                                        } else {
+                                            // C'est un fichier
+                                            isVideo = media.type === 'video';
+                                        }
+
+                                        return (
+                                            <div key={i} className="relative w-20 h-20 rounded-2 overflow-hidden border border-neutral-4 group">
+                                                {isVideo ? (
+                                                    <>
+                                                        {/* YouTube/Vimeo : afficher thumbnail */}
+                                                        {typeof media === 'string' && isYouTubeVimeo ? (
+                                                            <VideoThumbnail url={media} />
+                                                        ) : (
+                                                            /* Vidéo fichier ou URL directe */
+                                                            <video
+                                                                src={typeof media === 'string' ? media : media.preview}
+                                                                className="w-full h-full object-cover"
+                                                                muted
+                                                            />
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <img
+                                                        src={typeof media === 'string' ? media : media.preview}
+                                                        alt={`media-${i}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+
+                                                {/* Badge type */}
+                                                <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-neutral-8/70 text-[9px] font-bold text-white uppercase">
+                                                    {isVideo ? '🎬' : '🖼️'}
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeSubImage(i)}
+                                                    className="absolute inset-0 bg-neutral-8/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                                                >
+                                                    <Trash2 size={14} className="text-white" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
 
                                     {/* Bouton ajouter fichier */}
                                     <button
                                         type="button"
                                         onClick={() => subImageRef.current?.click()}
-                                        className=" w-20 h-20 rounded-2 border-2 border-dashed border-neutral-4 dark:border-neutral-4 flex flex-col items-center justify-center gap-1 text-neutral-6 hover:border-primary-1 hover:text-primary-1 transition-colors duration-200 cursor-pointer ">
+                                        className="w-20 h-20 rounded-2 border-2 border-dashed border-neutral-4 dark:border-neutral-4 flex flex-col items-center justify-center gap-1 text-neutral-6 hover:border-primary-1 hover:text-primary-1 transition-colors duration-200 cursor-pointer">
                                         <Upload size={16} />
                                         <span className="text-[10px] font-poppins">Fichier</span>
                                     </button>
@@ -811,14 +624,21 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
                                             setTempImageType('sub');
                                             setShowImageUrlModal(true);
                                         }}
-                                        className="w-20 h-20 rounded-2 border-2 border-dashed border-neutral-4 dark:border-neutral-4 flex flex-col items-center justify-center gap-1 text-neutral-6 hover:border-primary-1 hover:text-primary-1       transition-colors duration-200 cursor-pointer">
+                                        className="w-20 h-20 rounded-2 border-2 border-dashed border-neutral-4 dark:border-neutral-4 flex flex-col items-center justify-center gap-1 text-neutral-6 hover:border-primary-1 hover:text-primary-1 transition-colors duration-200 cursor-pointer">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                                         </svg>
                                         <span className="text-[10px] font-poppins">URL</span>
                                     </button>
                                 </div>
-                                <input ref={subImageRef} type="file" accept="image/*" multiple className="hidden" onChange={handleSubImages} />
+                                <input
+                                    ref={subImageRef}
+                                    type="file"
+                                    accept="image/*,video/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handleSubMedia}
+                                />
                             </div>
                         </div>
 
@@ -921,54 +741,101 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
 
                             {form.hasColors && (
                                 <div className="flex flex-col gap-3">
-                                    {/* Formulaire d'ajout de couleur */}
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            id="colorName"
-                                            placeholder="Nom de la couleur (ex: Rouge)"
-                                            className="flex-1 rounded-md border border-neutral-5 dark:border-neutral-5 bg-neutral-0 dark:bg-neutral-0 px-4 py-2 text-small text-neutral-8 dark:text-neutral-8 font-poppins outline-none focus:border-primary-1 focus:ring-2 focus:ring-primary-5"
-                                        />
-                                        <input
-                                            type="color"
-                                            id="colorHex"
-                                            defaultValue="#000000"
-                                            className="w-15 h-10 p-0 rounded-md border border-neutral-5 cursor-pointer"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const name = document.getElementById('colorName').value;
-                                                const hex = document.getElementById('colorHex').value;
-                                                if (name.trim()) {
-                                                    handleAddColor(name, hex);
-                                                    document.getElementById('colorName').value = '';
-                                                    document.getElementById('colorHex').value = '#000000';
+                                    {/* Sélecteur de couleur avec aperçu */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-xs font-medium font-poppins text-neutral-7 dark:text-neutral-7">
+                                            Sélectionner une couleur
+                                        </label>
+                                        <select
+                                            id="colorSelect"
+                                            onChange={(e) => {
+                                                const selectedColor = PRESET_COLORS.find(c => c.hex === e.target.value);
+                                                if (selectedColor && !form.colors.find(c => c.hex === selectedColor.hex)) {
+                                                    handleAddColor(selectedColor.name, selectedColor.hex);
+                                                    e.target.value = ''; // Reset le select
                                                 }
                                             }}
-                                            className="px-4 py-2 bg-primary-1 text-white rounded-full text-xs font-semibold hover:bg-primary-2 transition-colors cursor-pointer"
+                                            className="
+                        w-full rounded-md border border-neutral-5 dark:border-neutral-5
+                        bg-neutral-0 dark:bg-neutral-0
+                        px-4 py-2.5 text-small text-neutral-8 dark:text-neutral-8
+                        font-poppins outline-none
+                        focus:border-primary-1 focus:ring-2 focus:ring-primary-5
+                        transition-all duration-200 cursor-pointer
+                    "
+                                            defaultValue=""
                                         >
-                                            Ajouter
-                                        </button>
+                                            <option value="">Choisir une couleur...</option>
+                                            {PRESET_COLORS.map(color => (
+                                                <option
+                                                    key={color.hex}
+                                                    value={color.hex}
+                                                    disabled={form.colors.some(c => c.hex === color.hex)}
+                                                >
+                                                    {color.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
 
-                                    {/* Liste des couleurs ajoutées */}
+                                    {/* Grille visuelle des couleurs (alternative plus UX) */}
+                                    <div>
+                                        <label className="text-xs font-medium font-poppins text-neutral-7 dark:text-neutral-7 mb-2 block">
+                                            Ou sélectionner visuellement
+                                        </label>
+                                        <div className="grid grid-cols-10 gap-2">
+                                            {PRESET_COLORS.map(color => {
+                                                const isSelected = form.colors.some(c => c.hex === color.hex);
+                                                return (
+                                                    <button
+                                                        key={color.hex}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (!isSelected) {
+                                                                handleAddColor(color.name, color.hex);
+                                                            }
+                                                        }}
+                                                        disabled={isSelected}
+                                                        className={`
+                                    w-full aspect-square rounded-md border-2 
+                                    transition-all duration-200
+                                    ${isSelected
+                                                                ? 'border-neutral-4 opacity-40 cursor-not-allowed'
+                                                                : 'border-transparent hover:border-primary-1 hover:scale-110 cursor-pointer'
+                                                            }
+                                `}
+                                                        style={{ backgroundColor: color.hex }}
+                                                        title={color.name}
+                                                    >
+                                                        {isSelected && (
+                                                            <span className="text-white text-xs">✓</span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Liste des couleurs sélectionnées */}
                                     {form.colors.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 pt-2 border-t border-neutral-3">
+                                        <div className="flex flex-wrap gap-2 pt-3 border-t border-neutral-3">
+                                            <span className="text-xs font-semibold text-neutral-6 w-full mb-1">
+                                                Couleurs sélectionnées :
+                                            </span>
                                             {form.colors.map((color, i) => (
                                                 <div
                                                     key={i}
                                                     className="flex items-center gap-2 px-3 py-2 bg-neutral-2 rounded-full"
                                                 >
                                                     <div
-                                                        className="w-5 h-5 rounded-full border border-neutral-4"
+                                                        className="w-5 h-5 rounded-full border-2 border-neutral-4"
                                                         style={{ backgroundColor: color.hex }}
                                                     />
                                                     <span className="text-xs font-semibold text-neutral-8">{color.name}</span>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleRemoveColor(i)}
-                                                        className="cursor-pointer"
+                                                        className="cursor-pointer hover:bg-neutral-3 rounded-full p-0.5 transition-colors"
                                                     >
                                                         <X size={12} className="text-neutral-6" />
                                                     </button>
@@ -1034,13 +901,14 @@ const ProductFormModal = ({ open, onClose, product = null, onSave }) => {
                     <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
                         <div className="bg-neutral-0 dark:bg-neutral-0 rounded-3 shadow-xl w-full max-w-md p-6">
                             <h3 className="text-sm font-bold font-poppins text-neutral-8 mb-4">
-                                Ajouter une image via URL
+                                Ajouter un média via URL
                             </h3>
                             <InputField
-                                label="URL de l'image"
+                                label="URL du média (image ou vidéo)"
                                 value={tempImageUrl}
                                 onChange={(e) => setTempImageUrl(e.target.value)}
-                                placeholder="https://exemple.com/image.jpg"
+                                placeholder="https://exemple.com/media.jpg ou .mp4"
+                                hint="Formats acceptés : JPG, PNG, MP4, WEBM, etc."
                             />
                             <div className="flex justify-end gap-3 mt-4">
                                 <Button

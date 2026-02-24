@@ -17,7 +17,7 @@ const ClientDetailModal = ({ open, onClose, client, onDisable, onBlock, onDelete
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-8/60 z-40 backdrop-blur-sm"
+                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-40 backdrop-blur-sm"
                 onClick={onClose}
             />
 

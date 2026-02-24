@@ -2,11 +2,11 @@ import React from 'react';
 import { MessageCircle, Facebook, Instagram, MessageSquare, Mail } from 'lucide-react';
 
 export const CHANNEL_CONFIG = {
-    WhatsApp: { color: 'bg-[#dcfce7] text-[#16a34a]', icon: <MessageCircle size={11} /> },
-    Facebook: { color: 'bg-[#dbeafe] text-[#1d4ed8]', icon: <Facebook size={11} /> },
-    Instagram: { color: 'bg-[#fce7f3] text-[#be185d]', icon: <Instagram size={11} /> },
-    SMS: { color: 'bg-warning-2 text-warning-1', icon: <MessageSquare size={11} /> },
-    Email: { color: 'bg-primary-5 text-primary-1', icon: <Mail size={11} /> },
+    WhatsApp: { color: 'bg-warning-2 text-primary-1', icon: <MessageCircle size={12} /> },
+    Facebook: { color: 'bg-primary-5 text-primary-1', icon: <Facebook size={12} /> },
+    Instagram: { color: 'bg-neutral-3 text-neutral-6', icon: <Instagram size={12} /> },
+    SMS: { color: 'bg-warning-2 text-warning-1', icon: <MessageSquare size={12} /> },
+    Email: { color: 'bg-primary-5 text-primary-1', icon: <Mail size={12} /> },
 };
 
 const AdChannelBadge = ({ channel, size = 'normal' }) => {

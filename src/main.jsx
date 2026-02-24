@@ -37,16 +37,16 @@ const App = () => {
 
         {/* Pages privées */}
         <Route path="/dashboard" element={<Layout showSearch={false}><DashboardPage /></Layout>} />
-        <Route path="/products" element={<Layout showSearch={true}><ProductsPage /></Layout>} />
-        <Route path="/cities" element={<Layout showSearch={true}><VillesPage /></Layout>} />
-        <Route path="/notifications" element={<Layout showSearch={true}><NotificationsPage /></Layout>} />
-        <Route path="/publish" element={<Layout showSearch={true}><PublishPage /></Layout>} />
-        <Route path="/reports" element={<Layout showSearch={true}><ReportsPage /></Layout>} />
-        <Route path="/settings" element={<Layout showSearch={true}><SettingsPage /></Layout>} />
-        <Route path="/profile" element={<Layout showSearch={true}><ProfilePage /></Layout>} />
-        <Route path="/categories" element={<Layout showSearch={true}><CategoriesPage /></Layout>} />
-        <Route path="/orders" element={<Layout showSearch={true}><OrdersPage /></Layout>} />
-        <Route path="/clients" element={<Layout showSearch={true}><ClientsPage /></Layout>} />
+        <Route path="/products" element={<Layout showSearch={false}><ProductsPage /></Layout>} />
+        <Route path="/cities" element={<Layout showSearch={false}><VillesPage /></Layout>} />
+        <Route path="/notifications" element={<Layout showSearch={false}><NotificationsPage /></Layout>} />
+        <Route path="/publish" element={<Layout showSearch={false}><PublishPage /></Layout>} />
+        <Route path="/reports" element={<Layout showSearch={false}><ReportsPage /></Layout>} />
+        <Route path="/settings" element={<Layout showSearch={false}><SettingsPage /></Layout>} />
+        <Route path="/profile" element={<Layout showSearch={false}><ProfilePage /></Layout>} />
+        <Route path="/categories" element={<Layout showSearch={false}><CategoriesPage /></Layout>} />
+        <Route path="/orders" element={<Layout showSearch={false}><OrdersPage /></Layout>} />
+        <Route path="/clients" element={<Layout showSearch={false}><ClientsPage /></Layout>} />
 
       </Routes>
     </>

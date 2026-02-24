@@ -55,10 +55,10 @@ const SalesByCategoryChart = ({ period = 'month' }) => {
 
     return (
         <div className="
-            bg-neutral-0 dark:bg-neutral-0
-            border border-neutral-4 dark:border-neutral-4
-            rounded-3 p-5 flex flex-col gap-5
-        ">
+    bg-neutral-0 dark:bg-neutral-0
+    border border-neutral-4 dark:border-neutral-4
+    rounded-3 p-5 flex flex-col gap-5
+">
             <h2 className="text-sm font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
                 Ventes par catégorie
             </h2>
@@ -69,10 +69,18 @@ const SalesByCategoryChart = ({ period = 'month' }) => {
                     layout="vertical"
                     margin={{ top: 0, right: 20, left: 20, bottom: 0 }}
                 >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#03172D1A" horizontal={false} />
+                    <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="var(--color-neutral-4)"
+                        horizontal={false}
+                    />
                     <XAxis
                         type="number"
-                        tick={{ fontSize: 10, fontFamily: 'Poppins', fill: '#03172D99' }}
+                        tick={{
+                            fontSize: 10,
+                            fontFamily: 'Poppins',
+                            fill: 'var(--color-neutral-6)'
+                        }}
                         axisLine={false}
                         tickLine={false}
                         tickFormatter={v => `${(v / 1000).toFixed(0)}k`}
@@ -80,7 +88,11 @@ const SalesByCategoryChart = ({ period = 'month' }) => {
                     <YAxis
                         type="category"
                         dataKey="category"
-                        tick={{ fontSize: 11, fontFamily: 'Poppins', fill: '#03172D99' }}
+                        tick={{
+                            fontSize: 11,
+                            fontFamily: 'Poppins',
+                            fill: 'var(--color-neutral-6)'
+                        }}
                         axisLine={false}
                         tickLine={false}
                         width={80}

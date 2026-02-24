@@ -153,7 +153,7 @@ const AdCampaignForm = ({ open, onClose, campaign = null, onSave }) => {
     return (
         <>
             {/* Overlay */}
-            <div className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-8/60 z-40 backdrop-blur-sm" onClick={onClose} />
+            <div className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-40 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

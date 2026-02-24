@@ -136,7 +136,7 @@ const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-8/60 z-40 backdrop-blur-sm"
+                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-40 backdrop-blur-xs"
                 onClick={onClose}
             />
 
@@ -145,8 +145,8 @@ const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
                 <div className="
                     bg-neutral-0 dark:bg-neutral-0
                     rounded-3 shadow-xl
-                    w-full max-w-md
-                    flex flex-col overflow-hidden
+                    w-full max-w-md max-h-[90vh]
+                    flex flex-col overflow-hidden rounded-md
                 ">
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-4 dark:border-neutral-4">
@@ -162,7 +162,7 @@ const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
                     </div>
 
                     {/* Body */}
-                    <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4">
+                    <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4 overflow-auto">
 
                         <InputField
                             label="Nom de la catégorie"

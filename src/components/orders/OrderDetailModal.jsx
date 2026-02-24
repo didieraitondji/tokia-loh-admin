@@ -4,6 +4,8 @@ import Button from '../Button';
 import OrderStatusBadge from './OrderStatusBadge';
 import OrderStatusStepper from './OrderStatusStepper';
 import { generateInvoice, generateDeliveryNote } from './OrderPDFGenerator';
+//import OrderMap from './OrderMapOld';
+import OrderMap from './OrderMap';
 
 const formatPrice = (p) => `${Number(p).toLocaleString('fr-FR')} F`;
 
@@ -37,7 +39,7 @@ const OrderDetailModal = ({ open, onClose, order, onStatusChange }) => {
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-8/60 z-40 backdrop-blur-sm"
+                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-40 backdrop-blur-sm"
                 onClick={onClose}
             />
 
@@ -183,6 +185,9 @@ const OrderDetailModal = ({ open, onClose, order, onStatusChange }) => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Carte de localisation */}
+                        <OrderMap client={currentOrder.client} orderId={currentOrder.id} />
 
                         {/* Date */}
                         <p className="text-[11px] font-poppins text-neutral-5">

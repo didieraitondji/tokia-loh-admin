@@ -7,14 +7,7 @@ const PERIODS = [
     { key: 'month', label: 'Ce mois' },
 ];
 
-/*
-  Props :
-  - period       : 'day' | 'week' | 'month'
-  - onPeriodChange : (key) => void
-  - dateFrom     : string
-  - dateTo       : string
-  - onDateChange : ({ from, to }) => void
-*/
+
 const ReportFilters = ({ period, onPeriodChange, dateFrom, dateTo, onDateChange }) => {
     return (
         <div className="
