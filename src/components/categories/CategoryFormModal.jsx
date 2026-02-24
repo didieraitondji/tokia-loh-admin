@@ -9,6 +9,8 @@ const EMPTY_FORM = {
     description: '',
     order: '',
     active: true,
+    image: null,
+    imagePreview: null
 };
 
 const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
@@ -21,12 +23,20 @@ const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
     // Pré-remplir en mode édition
     useEffect(() => {
         if (open) {
-            setForm(category ? { ...EMPTY_FORM, ...category } : EMPTY_FORM);
+            if (category) {
+                setForm({
+                    ...EMPTY_FORM,
+                    ...category,
+                    imagePreview: category.imageUrl || null // Si l'API retourne une URL
+                });
+            } else {
+                setForm(EMPTY_FORM);
+            }
             setErrors({});
         }
     }, [open, category]);
 
-    // Bloquer le scroll
+    // useEffect pour bloquer le scroll
     useEffect(() => {
         document.body.style.overflow = open ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
@@ -40,6 +50,40 @@ const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Vérifier le type de fichier
+            if (!file.type.startsWith('image/')) {
+                setErrors(prev => ({ ...prev, image: 'Veuillez sélectionner une image valide' }));
+                return;
+            }
+
+            // Vérifier la taille (ex: max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setErrors(prev => ({ ...prev, image: 'Image trop volumineuse (max 5MB)' }));
+                return;
+            }
+
+            // Créer une preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setForm(prev => ({
+                    ...prev,
+                    image: file,
+                    imagePreview: reader.result
+                }));
+            };
+            reader.readAsDataURL(file);
+
+            if (errors.image) setErrors(prev => ({ ...prev, image: '' }));
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setForm(prev => ({ ...prev, image: null, imagePreview: null }));
+    };
+
     const validate = () => {
         const e = {};
         if (!form.name.trim()) e.name = 'Nom de catégorie requis';
@@ -50,11 +94,38 @@ const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
         return Object.keys(e).length === 0;
     };
 
-    const handleSubmit = async (e) => {
+    /* const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) return;
         setLoading(true);
         // TODO : appel API create ou update
+        await new Promise(r => setTimeout(r, 1200));
+        setLoading(false);
+        onSave?.(form);
+        onClose();
+    }; */
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!validate()) return;
+        setLoading(true);
+
+        // Créer un FormData pour envoyer le fichier
+        const formData = new FormData();
+        formData.append('name', form.name);
+        formData.append('description', form.description);
+        formData.append('order', form.order);
+        formData.append('active', form.active);
+
+        if (form.image) {
+            formData.append('image', form.image);
+        }
+
+        // TODO : Remplacer par votre appel API réel
+        // await axios.post('/api/categories', formData, {
+        //     headers: { 'Content-Type': 'multipart/form-data' }
+        // });
+
         await new Promise(r => setTimeout(r, 1200));
         setLoading(false);
         onSave?.(form);
@@ -111,6 +182,56 @@ const CategoryFormModal = ({ open, onClose, category = null, onSave }) => {
                             onChange={handleChange}
                             placeholder="Décrivez cette catégorie..."
                         />
+
+                        {/* Upload d'image */}
+                        <div>
+                            <label className="block text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8 mb-2">
+                                Image de la catégorie
+                            </label>
+
+                            {form.imagePreview ? (
+                                // Preview de l'image
+                                <div className="relative w-full h-40 rounded-2 overflow-hidden border border-neutral-4 dark:border-neutral-4">
+                                    <img
+                                        src={form.imagePreview}
+                                        alt="Preview"
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        className="absolute top-2 right-2 w-7 h-7 bg-neutral-0/90 rounded-full flex items-center justify-center hover:bg-neutral-0 transition-colors"
+                                    >
+                                        <X size={14} className="text-neutral-8" />
+                                    </button>
+                                </div>
+                            ) : (
+                                // Zone d'upload
+                                <label className="w-full h-40 border-2 border-dashed border-neutral-4 dark:border-neutral-4 rounded-2 flex flex-col items-center justify-center gap-2 hover:border-neutral-6 hover:bg-neutral-2 dark:hover:bg-neutral-2            transition-colors cursor-pointer">
+                                    <svg className="w-8 h-8 text-neutral-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    <span className="text-xs font-poppins text-neutral-6">
+                                        Cliquer pour ajouter une image
+                                    </span>
+                                    <span className="text-[11px] font-poppins text-neutral-5">
+                                        PNG, JPG jusqu'à 5MB
+                                    </span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className="hidden"
+                                    />
+                                </label>
+                            )}
+
+                            {errors.image && (
+                                <p className="text-[11px] font-poppins text-red-600 mt-1">
+                                    {errors.image}
+                                </p>
+                            )}
+                        </div>
 
                         <InputField
                             label="Ordre d'affichage"

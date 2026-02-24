@@ -77,7 +77,6 @@ Voici les fonctionnalités structurées pour le backoffice
 - Paramètres de livraison
 
 
-
 ## Pages à créer (ordre de priorité)
 
 Priorité
@@ -93,4 +92,3 @@ Utile
 
 Secondaire 
     Paramètres
-
