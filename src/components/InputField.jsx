@@ -23,7 +23,7 @@ const InputField = ({
     const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
 
     const baseInput = `
-        w-full rounded-[var(--rounded-h2)] border border-neutral-5 bg-neutral-0
+        w-full rounded-rounded-h2) border border-neutral-5 bg-neutral-0
         px-4 py-2.5 text-small text-neutral-8
         placeholder:text-neutral-6 font-poppins
         outline-none
