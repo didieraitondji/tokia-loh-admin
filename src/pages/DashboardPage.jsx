@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     ShoppingCart, Clock, CheckCircle, XCircle,
     TrendingUp, Users
@@ -24,8 +24,12 @@ const CA_FILTERS = [
 ];
 
 const DashboardPage = () => {
-    const [caFilter, setCaFilter] = useState('day');
 
+    useEffect(() => {
+        document.title = 'Admin Tokia-Loh | Tableau de bord';
+    }, []);
+
+    const [caFilter, setCaFilter] = useState('day');
     // États pour les filtres de date
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
