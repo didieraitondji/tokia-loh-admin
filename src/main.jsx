@@ -13,6 +13,7 @@ import Layout from './components/layout/Layout';
 // importation de mes composants de pages
 import LoginPage from './pages/LoginPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import CategoryDetailPage from './pages/CategoryDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
 import VillesPage from './pages/VillesPage';
@@ -137,6 +138,15 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/categories/:id" element={
+          <ProtectedRoute>
+            <Layout showSearch={false}>
+              <CategoryDetailPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route
           path="/orders"
           element={

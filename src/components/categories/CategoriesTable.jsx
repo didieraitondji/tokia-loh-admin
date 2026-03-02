@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Pencil, Trash2, ChevronUp, ChevronDown, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import ProductStatusToggle from '../products/ProductStatusToggle';
 
 // Données mock — à remplacer par l'API
@@ -12,9 +13,8 @@ const MOCK_CATEGORIES = [
     { id: 6, name: 'Accessoires', description: 'Ceintures, foulards...', order: 6, products: 5, active: true },
 ];
 
-// Avatar lettre pour la catégorie
 const CategoryAvatar = ({ name }) => (
-    <div className="w-9 h-9 rounded-2 bg-primary-5 flex items-center justify-center shrink-0">
+    <div className="w-9 h-9 rounded-md bg-primary-5 flex items-center justify-center shrink-0">
         <span className="text-xs font-bold font-poppins text-primary-1 uppercase">
             {name.slice(0, 2)}
         </span>
@@ -22,27 +22,25 @@ const CategoryAvatar = ({ name }) => (
 );
 
 const CategoriesTable = ({ onEdit, onDelete }) => {
+    const navigate = useNavigate();
+
     const [categories, setCategories] = useState(
         [...MOCK_CATEGORIES].sort((a, b) => a.order - b.order)
     );
 
-    // Toggle actif/inactif
     const handleToggle = (id) => {
         setCategories(prev =>
             prev.map(c => c.id === id ? { ...c, active: !c.active } : c)
         );
     };
 
-    // Déplacer vers le haut
     const moveUp = (index) => {
         if (index === 0) return;
         const updated = [...categories];
         [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
-        // Recalcule les ordres
         setCategories(updated.map((c, i) => ({ ...c, order: i + 1 })));
     };
 
-    // Déplacer vers le bas
     const moveDown = (index) => {
         if (index === categories.length - 1) return;
         const updated = [...categories];
@@ -54,7 +52,7 @@ const CategoriesTable = ({ onEdit, onDelete }) => {
         <div className="
             bg-neutral-0 dark:bg-neutral-0
             border border-neutral-4 dark:border-neutral-4
-            rounded-3 overflow-hidden
+            rounded-md overflow-hidden
         ">
             <div className="overflow-x-auto">
                 <table className="w-full text-xs font-poppins">
@@ -130,18 +128,31 @@ const CategoriesTable = ({ onEdit, onDelete }) => {
 
                                 {/* Actions */}
                                 <td className="px-5 py-3">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
+
+                                        {/* Voir le détail → /categories/:id */}
+                                        <button
+                                            onClick={() => navigate(`/categories/${cat.id}`)}
+                                            title="Voir le détail"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-secondary-5 hover:text-secondary-1 transition-colors cursor-pointer"
+                                        >
+                                            <Eye size={14} />
+                                        </button>
+
+                                        {/* Modifier */}
                                         <button
                                             onClick={() => onEdit?.(cat)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors cursor-pointer"
                                             title="Modifier"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors cursor-pointer"
                                         >
                                             <Pencil size={14} />
                                         </button>
+
+                                        {/* Supprimer */}
                                         <button
                                             onClick={() => onDelete?.(cat)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                             title="Supprimer"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                         >
                                             <Trash2 size={14} />
                                         </button>
