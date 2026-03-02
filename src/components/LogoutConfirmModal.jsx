@@ -1,110 +1,81 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
+import Button from './Button';
+import { LogOut } from 'lucide-react';
 
 const LogoutConfirmModal = ({ isOpen, onConfirm, onCancel }) => {
     if (!isOpen) return null;
 
-    return (
+    return ReactDOM.createPortal(
         <>
-            {/* Overlay */}
+            {/* ── Overlay ── */}
             <div
-                className="z-50 fixed top-0 left-0 right-0 bottom-0 bg-red-500 "
+                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 backdrop-blur-sm z-40"
                 onClick={onCancel}
             />
 
-            {/* Modal */}
+            {/* ── Modal ── */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div
-                    className="bg-neutral-0 rounded-rounded-h1 shadow-2xl w-full max-w-md p-6 animate-scale-in"
-                    onClick={(e) => e.stopPropagation()}
+                    className="
+                        bg-neutral-0 dark:bg-neutral-0
+                        border border-neutral-4 dark:border-neutral-4
+                        rounded-md shadow-xl
+                        w-full max-w-sm
+                        flex flex-col items-center gap-5 p-6
+                        animate-scale-in
+                    "
+                    onClick={e => e.stopPropagation()}
                 >
-                    {/* Icône */}
-                    <div className="flex justify-center mb-4">
-                        <div className="w-16 h-16 rounded-full bg-warning-2 flex items-center justify-center">
-                            <svg
-                                className="w-8 h-8 text-warning-1"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                />
-                            </svg>
-                        </div>
+                    {/* Icône warning */}
+                    <div className="w-14 h-14 rounded-full bg-danger-2 flex items-center justify-center shrink-0">
+                        <LogOut size={24} className="text-danger-1" />
                     </div>
 
-                    {/* Titre */}
-                    <h2 className="text-h4 font-semibold text-neutral-9 text-center mb-2">
-                        Confirmer la déconnexion
-                    </h2>
-
-                    {/* Message */}
-                    <p className="text-body text-neutral-7 text-center mb-6">
-                        Êtes-vous sûr de vouloir vous déconnecter ? Vous devrez vous reconnecter pour accéder à votre compte.
-                    </p>
+                    {/* Texte */}
+                    <div className="flex flex-col gap-1.5 text-center">
+                        <h2 className="text-sm font-bold font-poppins text-neutral-8 dark:text-neutral-8">
+                            Confirmer la déconnexion
+                        </h2>
+                        <p className="text-xs font-poppins text-neutral-6 leading-relaxed">
+                            Êtes-vous sûr de vouloir vous déconnecter ?
+                            Vous devrez vous reconnecter pour accéder à votre compte.
+                        </p>
+                    </div>
 
                     {/* Boutons */}
-                    <div className="flex gap-3 flex-col md:flex-row">
-                        {/* Bouton Annuler */}
-                        <button
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 w-full">
+                        <Button
+                            variant="ghost"
+                            size="normal"
                             onClick={onCancel}
-                            className="flex-1 px-4 py-3 cursor-pointer rounded-md border-2 border-neutral-5 text-neutral-8 font-medium text-body hover:bg-neutral-3 transition-colors hidden md:block"
+                            className="flex-1"
                         >
                             Annuler
-                        </button>
-
-                        {/* Bouton Déconnexion */}
-                        <button
+                        </Button>
+                        <Button
+                            variant="danger"
+                            size="normal"
                             onClick={onConfirm}
-                            className="flex-1 px-4 py-3 cursor-pointer rounded-md bg-danger-1 text-white font-medium text-body hover:bg-[#DC2626] transition-colors"
+                            className="flex-1"
                         >
                             Se déconnecter
-                        </button>
-
-                        {/* Bouton Annuler */}
-                        <button
-                            onClick={onCancel}
-                            className="flex-1 px-4 py-3 cursor-pointer rounded-md border-2 border-neutral-5 text-neutral-8 font-medium text-body hover:bg-neutral-3 transition-colors md:hidden"
-                        >
-                            Annuler
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
 
-            <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes scale-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-
-        .animate-scale-in {
-          animation: scale-in 0.2s ease-out;
-        }
-      `}</style>
-        </>
+            <style>{`
+                @keyframes scale-in {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to   { opacity: 1; transform: scale(1);    }
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.15s ease-out;
+                }
+            `}</style>
+        </>,
+        document.body
     );
 };
 

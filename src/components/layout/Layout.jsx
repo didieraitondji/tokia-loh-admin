@@ -40,7 +40,9 @@ const Layout = ({ children, showSearch = true }) => {
                 fixed inset-y-0 left-0 z-30 md:hidden
                 transition-transform duration-300 ease-in-out
                 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-            `}>
+
+            `}
+            >
                 <Sidebar
                     collapsed={false}
                     onToggle={() => setMobileOpen(false)}

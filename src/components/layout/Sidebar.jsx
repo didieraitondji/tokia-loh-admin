@@ -81,7 +81,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
     };
 
     return (
-        <>
+        <div className="w-full">
             <aside className={`
             relative flex flex-col
             bg-neutral-0 dark:bg-neutral-0
@@ -189,7 +189,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                 onConfirm={handleConfirmLogout}
                 onCancel={handleCancelLogout}
             />
-        </>
+        </div>
     );
 };
 
