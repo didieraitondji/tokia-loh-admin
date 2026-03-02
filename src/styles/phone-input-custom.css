@@ -1,269 +1,189 @@
-/* Styles personnalisés pour react-phone-input-2 - À ajouter dans votre fichier CSS global ou dans un fichier séparé */
+/* ============================================================
+   Styles personnalisés pour react-phone-number-input
+   Remplace phone-input-custom.css
+   ============================================================ */
 
-/* Container principal */
-.react-tel-input {
+/* Variables CSS natives de la librairie - override ici */
+:root {
+    --PhoneInput-color--focus: var(--primary-1, #3b82f6);
+    --PhoneInputCountryFlag-height: 1em;
+    --PhoneInputCountryFlag-borderColor: var(--neutral-5, #e2e8f0);
+    --PhoneInputCountryFlag-borderColor--focus: var(--primary-1, #3b82f6);
+    --PhoneInputCountrySelectArrow-color: var(--neutral-6, #a0aec0);
+    --PhoneInputCountrySelectArrow-opacity: 1;
+    --PhoneInputCountrySelectArrow-width: 0.3em;
+    --PhoneInputCountrySelectArrow-borderWidth: 2px;
+    --PhoneInputCountrySelectArrow-color--focus: var(--primary-1, #3b82f6);
+}
+
+/* ── Wrapper principal ───────────────────────────────────── */
+.PhoneInput {
+    display: flex;
+    align-items: center;
     width: 100%;
+    height: 42px;
+    background-color: var(--neutral-0, #ffffff);
+    border: 1px solid var(--neutral-5, #e2e8f0);
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
     font-family: 'Poppins', sans-serif;
+    overflow: hidden;
 }
 
-/* Champ input principal */
-.react-tel-input .form-control {
-    width: 100% !important;
-    height: 42px !important;
-    font-size: 14px !important;
-    line-height: 1.5 !important;
-    font-family: 'Poppins', sans-serif !important;
-    font-weight: 400 !important;
-
-    /* Couleurs et bordures - correspond à InputField */
-    background-color: var(--neutral-0, #ffffff) !important;
-    color: var(--neutral-8, #2d3748) !important;
-    border: 1px solid var(--neutral-5, #e2e8f0) !important;
-    border-radius: var(--rounded-h2, 8px) !important;
-
-    /* Espacement */
-    padding: 10px 14px 10px 52px !important;
-
-    /* Transitions */
-    transition: all 0.2s ease-in-out !important;
-}
-
-/* Focus sur le champ */
-.react-tel-input .form-control:focus {
-    outline: none !important;
+/* Focus sur le wrapper */
+.PhoneInput--focus {
     border-color: var(--primary-1, #3b82f6) !important;
     box-shadow: 0 0 0 2px var(--primary-5, rgba(59, 130, 246, 0.1)) !important;
 }
 
-/* Placeholder */
-.react-tel-input .form-control::placeholder {
-    color: var(--neutral-6, #a0aec0) !important;
-    opacity: 1 !important;
-}
-
-/* État disabled */
-.react-tel-input .form-control:disabled {
+/* Disabled */
+.PhoneInput--disabled {
     background-color: var(--neutral-3, #f7fafc) !important;
-    color: var(--neutral-6, #a0aec0) !important;
-    cursor: not-allowed !important;
     opacity: 0.6 !important;
+    cursor: not-allowed !important;
 }
 
-/* Bouton de sélection du drapeau */
-.react-tel-input .flag-dropdown {
-    position: absolute !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 48px !important;
-    border: none !important;
-    background-color: transparent !important;
-    border-radius: var(--rounded-h2, 8px) 0 0 var(--rounded-h2, 8px) !important;
+/* ── Sélecteur de pays ───────────────────────────────────── */
+.PhoneInputCountry {
+    display: flex;
+    align-items: center;
+    padding: 0 10px 0 12px;
+    border-right: 1px solid var(--neutral-5, #e2e8f0);
+    height: 100%;
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    gap: 6px;
 }
 
-.react-tel-input .selected-flag {
-    width: 48px !important;
-    height: 100% !important;
-    padding: 0 8px !important;
-    background-color: transparent !important;
-    border-right: 1px solid var(--neutral-5, #e2e8f0) !important;
-    border-radius: var(--rounded-h2, 8px) 0 0 var(--rounded-h2, 8px) !important;
-    transition: background-color 0.2s ease-in-out !important;
+.PhoneInputCountry:hover {
+    background-color: var(--neutral-2, #f7fafc);
 }
 
-.react-tel-input .selected-flag:hover,
-.react-tel-input .selected-flag:focus {
-    background-color: var(--neutral-2, #f7fafc) !important;
+/* Le <select> natif de pays (invisible, par-dessus le drapeau) */
+.PhoneInputCountrySelect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
 }
 
-/* Flèche du dropdown */
-.react-tel-input .selected-flag .arrow {
-    border: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    margin-left: 4px !important;
-    border-left: 3px solid transparent !important;
-    border-right: 3px solid transparent !important;
-    border-top: 4px solid var(--neutral-6, #a0aec0) !important;
-    transition: transform 0.2s ease-in-out !important;
+.PhoneInputCountrySelect:focus+.PhoneInputCountryIcon+.PhoneInputCountrySelectArrow {
+    color: var(--primary-1, #3b82f6);
 }
 
-.react-tel-input .selected-flag .arrow.up {
-    border-top: none !important;
-    border-bottom: 4px solid var(--neutral-6, #a0aec0) !important;
-    transform: rotate(0deg) !important;
+/* ── Icône drapeau ───────────────────────────────────────── */
+.PhoneInputCountryIcon {
+    width: calc(var(--PhoneInputCountryFlag-height) * 1.5);
+    height: var(--PhoneInputCountryFlag-height);
+    font-size: 1.2em;
 }
 
-/* Liste déroulante des pays */
-.react-tel-input .country-list {
-    width: 280px !important;
-    max-height: 240px !important;
-    background-color: var(--neutral-0, #ffffff) !important;
-    border: 1px solid var(--neutral-5, #e2e8f0) !important;
-    border-radius: var(--rounded-h2, 8px) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-    margin-top: 4px !important;
-    padding: 4px 0 !important;
-    font-family: 'Poppins', sans-serif !important;
-    overflow-y: auto !important;
+.PhoneInputCountryIcon--square {
+    width: var(--PhoneInputCountryFlag-height);
 }
 
-/* Scrollbar personnalisée pour la liste */
-.react-tel-input .country-list::-webkit-scrollbar {
-    width: 6px;
+/* Drapeau SVG/image */
+.PhoneInputCountryIconImg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--PhoneInputCountryFlag-borderColor);
+    border-radius: 2px;
 }
 
-.react-tel-input .country-list::-webkit-scrollbar-track {
-    background: var(--neutral-2, #f7fafc);
-    border-radius: 3px;
+/* Emoji de drapeau (fallback) */
+.PhoneInputCountryIcon--border {
+    background-color: var(--neutral-2, #f7fafc);
+    box-shadow: 0 0 0 1px var(--PhoneInputCountryFlag-borderColor);
+    border-radius: 2px;
 }
 
-.react-tel-input .country-list::-webkit-scrollbar-thumb {
-    background: var(--neutral-5, #e2e8f0);
-    border-radius: 3px;
+/* ── Flèche dropdown ─────────────────────────────────────── */
+.PhoneInputCountrySelectArrow {
+    display: block;
+    width: var(--PhoneInputCountrySelectArrow-width);
+    height: var(--PhoneInputCountrySelectArrow-width);
+    margin-left: 2px;
+    border-style: solid;
+    border-color: var(--PhoneInputCountrySelectArrow-color);
+    border-top-width: 0;
+    border-bottom-width: var(--PhoneInputCountrySelectArrow-borderWidth);
+    border-left-width: 0;
+    border-right-width: var(--PhoneInputCountrySelectArrow-borderWidth);
+    transform: rotate(45deg);
+    opacity: var(--PhoneInputCountrySelectArrow-opacity);
+    transition: border-color 0.2s ease-in-out;
 }
 
-.react-tel-input .country-list::-webkit-scrollbar-thumb:hover {
-    background: var(--neutral-6, #a0aec0);
+.PhoneInputCountrySelect:focus+.PhoneInputCountryIcon+.PhoneInputCountrySelectArrow {
+    border-color: var(--PhoneInputCountrySelectArrow-color--focus);
+    opacity: 1;
 }
 
-/* Items de la liste */
-.react-tel-input .country {
-    padding: 8px 12px !important;
-    font-size: 14px !important;
-    color: var(--neutral-8, #2d3748) !important;
-    cursor: pointer !important;
-    transition: background-color 0.15s ease-in-out !important;
-    display: flex !important;
-    align-items: center !important;
+/* ── Champ input téléphone ───────────────────────────────── */
+.PhoneInputInput {
+    flex: 1;
+    height: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+    color: var(--neutral-8, #2d3748);
+    background-color: transparent;
+    border: none;
+    outline: none;
+    min-width: 0;
 }
 
-.react-tel-input .country:hover {
-    background-color: var(--primary-5, rgba(59, 130, 246, 0.1)) !important;
+.PhoneInputInput::placeholder {
+    color: var(--neutral-6, #a0aec0);
+    opacity: 1;
 }
 
-.react-tel-input .country.highlight {
-    background-color: var(--primary-5, rgba(59, 130, 246, 0.15)) !important;
+.PhoneInputInput:disabled {
+    color: var(--neutral-6, #a0aec0);
+    cursor: not-allowed;
 }
 
-/* Nom du pays */
-.react-tel-input .country-name {
-    margin-left: 8px !important;
-    color: var(--neutral-8, #2d3748) !important;
-    font-weight: 400 !important;
-}
-
-/* Code dial */
-.react-tel-input .dial-code {
-    color: var(--neutral-6, #a0aec0) !important;
-    font-size: 13px !important;
-    margin-left: auto !important;
-}
-
-/* Champ de recherche */
-.react-tel-input .search-box {
-    width: calc(100% - 16px) !important;
-    margin: 8px !important;
-    padding: 8px 12px !important;
-    font-size: 14px !important;
-    font-family: 'Poppins', sans-serif !important;
-    background-color: var(--neutral-1, #f7fafc) !important;
-    border: 1px solid var(--neutral-4, #cbd5e0) !important;
-    border-radius: 6px !important;
-    outline: none !important;
-    transition: all 0.2s ease-in-out !important;
-}
-
-.react-tel-input .search-box:focus {
-    background-color: var(--neutral-0, #ffffff) !important;
-    border-color: var(--primary-1, #3b82f6) !important;
-    box-shadow: 0 0 0 2px var(--primary-5, rgba(59, 130, 246, 0.1)) !important;
-}
-
-.react-tel-input .search-box::placeholder {
-    color: var(--neutral-6, #a0aec0) !important;
-}
-
-/* Message "No entries to show" */
-.react-tel-input .no-entries-message {
-    padding: 12px !important;
-    text-align: center !important;
-    color: var(--neutral-6, #a0aec0) !important;
-    font-size: 13px !important;
-}
-
-/* Pays préféré (divider) */
-.react-tel-input .divider {
-    border-bottom: 1px solid var(--neutral-4, #cbd5e0) !important;
-    margin: 4px 0 !important;
-}
-
-/* Mode sombre (optionnel - si vous avez un thème sombre) */
-.dark .react-tel-input .form-control {
-    background-color: var(--neutral-9, #1a202c) !important;
-    color: var(--neutral-1, #f7fafc) !important;
-    border-color: var(--neutral-7, #4a5568) !important;
-}
-
-.dark .react-tel-input .form-control:focus {
-    border-color: var(--primary-1, #3b82f6) !important;
-    box-shadow: 0 0 0 2px var(--primary-5, rgba(59, 130, 246, 0.2)) !important;
-}
-
-.dark .react-tel-input .selected-flag {
-    border-right-color: var(--neutral-7, #4a5568) !important;
-}
-
-.dark .react-tel-input .selected-flag:hover {
-    background-color: var(--neutral-8, #2d3748) !important;
-}
-
-.dark .react-tel-input .country-list {
-    background-color: var(--neutral-9, #1a202c) !important;
-    border-color: var(--neutral-7, #4a5568) !important;
-}
-
-.dark .react-tel-input .country {
-    color: var(--neutral-1, #f7fafc) !important;
-}
-
-.dark .react-tel-input .country:hover {
-    background-color: var(--primary-5, rgba(59, 130, 246, 0.2)) !important;
-}
-
-.dark .react-tel-input .search-box {
-    background-color: var(--neutral-8, #2d3748) !important;
-    border-color: var(--neutral-7, #4a5568) !important;
-    color: var(--neutral-1, #f7fafc) !important;
-}
-
-/* État d'erreur */
-.phone-input-error .react-tel-input .form-control {
+/* ── État d'erreur ───────────────────────────────────────── */
+.phone-input-error .PhoneInput {
     border-color: var(--danger-1, #ef4444) !important;
 }
 
-.phone-input-error .react-tel-input .form-control:focus {
+.phone-input-error .PhoneInput--focus {
     border-color: var(--danger-1, #ef4444) !important;
-    box-shadow: 0 0 0 2px var(--danger-2, rgba(239, 68, 68, 0.1)) !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
 }
 
-.phone-input-error .react-tel-input .selected-flag {
+.phone-input-error .PhoneInputCountry {
     border-right-color: var(--danger-1, #ef4444) !important;
 }
 
-/* Animation d'ouverture du dropdown */
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* ── Mode sombre ─────────────────────────────────────────── */
+.dark .PhoneInput {
+    background-color: var(--neutral-9, #1a202c);
+    border-color: var(--neutral-7, #4a5568);
 }
 
-.react-tel-input .country-list {
-    animation: slideDown 0.2s ease-out;
+.dark .PhoneInput--focus {
+    border-color: var(--primary-1, #3b82f6) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .PhoneInputCountry {
+    border-right-color: var(--neutral-7, #4a5568);
+}
+
+.dark .PhoneInputCountry:hover {
+    background-color: var(--neutral-8, #2d3748);
+}
+
+.dark .PhoneInputInput {
+    color: var(--neutral-1, #f7fafc);
 }

@@ -9,6 +9,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import { auth } from '../config/firebase.config';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import '../styles/phone-input-custom.css'; // Importer les styles personnalisés
+import { isValidPhoneNumber, parsePhoneNumber } from 'react-phone-number-input';
 
 const LoginPage = () => {
 
@@ -68,32 +69,27 @@ const LoginPage = () => {
         return re.test(code);
     }
 
-    // Gestion du changement du numéro de téléphone
-    const handlePhoneChange = (value, country, e, formattedValue) => {
-        // value contient le numéro avec le code pays (ex: "22561234567")
-        const fullNumber = '+' + value;
-        setPhoneNumber(fullNumber);
+    const handlePhoneChange = (value) => {
+        setPhoneNumber(value || '');
 
-        // Validation automatique par react-phone-input-2
-        // On vérifie si le numéro a le bon nombre de chiffres selon le pays
-        const phoneLength = value.length - country.dialCode.length;
+        if (!value) {
+            setIsValidPhone(false);
+            setError({});
+            return;
+        }
 
-        // Définir la longueur attendue selon le pays
-        const expectedLengths = {
-            'ci': 10, // Côte d'Ivoire: 10 chiffres après +225
-            'bj': 10,  // Bénin: 8 chiffres après +229
-            'sn': 9,  // Sénégal: 9 chiffres après +221
-            'tg': 8,  // Togo: 8 chiffres après +228
-            'bf': 8   // Burkina Faso: 8 chiffres après +226
-        };
-
-        const expectedLength = expectedLengths[country.countryCode] || 8;
-        const valid = phoneLength === expectedLength;
-
+        // Valider avec la librairie directement
+        const valid = isValidPhoneNumber(value);
         setIsValidPhone(valid);
 
-        if (!valid && value.length > 3) {
-            setError({ phone: `Numéro invalide pour ${country.name}` });
+        if (!valid && value.length > 4) {
+            // Récupérer le nom du pays pour le message d'erreur
+            let countryName = 'ce pays';
+            try {
+                const parsed = parsePhoneNumber(value);
+                if (parsed?.country) countryName = parsed.country;
+            } catch (_) { }
+            setError({ phone: `Numéro invalide pour ${countryName}` });
         } else {
             setError({});
         }
@@ -118,7 +114,7 @@ const LoginPage = () => {
     const handleSendOTP = async (e) => {
         e.preventDefault();
 
-        if (!phoneNumber || phoneNumber.length < 10) {
+        if (!phoneNumber) {
             setError({ phone: 'Veuillez entrer votre numéro de téléphone' });
             return;
         }
@@ -302,10 +298,10 @@ const LoginPage = () => {
                             {loading ? 'Envoi en cours...' : 'Envoyer le code'}
                         </Button>
 
-                        {/* Aide */}
+                        {/* Aide 
                         <p className="text-center text-xs text-neutral-6 font-poppins">
                             Disponible pour : CI 🇨🇮 • BJ 🇧🇯 • SN 🇸🇳 • TG 🇹🇬 • BF 🇧🇫
-                        </p>
+                        </p>*/}
                     </form>
                 )}
 
