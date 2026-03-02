@@ -26,7 +26,7 @@ const OrderMap = ({ client, orderId }) => {
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-2">
                 <p className="text-xs font-semibold font-poppins text-neutral-6 uppercase tracking-wide">
                     Localisation du client
                 </p>
@@ -35,7 +35,7 @@ const OrderMap = ({ client, orderId }) => {
                 </div>
             </div>
 
-            <div className="border border-neutral-4 dark:border-neutral-4 rounded-2 overflow-hidden">
+            <div className="border border-neutral-4 dark:border-neutral-4 rounded-2 overflow-hidden p-2">
                 {/* Carte MapLibre - AUCUN TOKEN REQUIS */}
                 <div className="h-64 w-full relative">
                     <Map

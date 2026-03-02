@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import OrderStatusBadge, { STATUS_CONFIG } from './OrderStatusBadge';
 
 // Données mock — à remplacer par l'API
 export const MOCK_ORDERS = [
     {
         id: '#1042', date: '23/06/2025 09:12',
-        client: {
-            firstName: 'Aminata', lastName: 'Koné', phone: '+225 07 00 11 22', city: 'Abidjan', latitude: 6.3654, longitude: 2.4183
-        },
+        client: { firstName: 'Aminata', lastName: 'Koné', phone: '+225 07 00 11 22', city: 'Abidjan', latitude: 6.3654, longitude: 2.4183 },
         items: [
             { name: 'Robe Ankara Wax', quantity: 1, unitPrice: 15000 },
             { name: 'Bracelet perles coco', quantity: 2, unitPrice: 3500 },
@@ -63,15 +62,16 @@ export const MOCK_ORDERS = [
 ];
 
 const STATUS_TABS = ['Toutes', ...Object.keys(STATUS_CONFIG)];
-
 const formatPrice = (p) => `${Number(p).toLocaleString('fr-FR')} F`;
-
 const calcTotal = (order) => {
     const sub = order.items?.reduce((acc, i) => acc + i.quantity * i.unitPrice, 0) ?? 0;
     return sub + (order.deliveryFee ?? 0);
 };
+// '#1042' → '1042'
+const toUrlId = (orderId) => orderId.replace('#', '');
 
-const OrdersTable = ({ onView, orders, onStatusChange }) => {
+const OrdersTable = ({ orders }) => {
+    const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState('Toutes');
 
@@ -84,7 +84,6 @@ const OrdersTable = ({ onView, orders, onStatusChange }) => {
         });
     }, [orders, search, activeTab]);
 
-    // Compteur par statut
     const countByStatus = useMemo(() => {
         const map = { Toutes: orders.length };
         Object.keys(STATUS_CONFIG).forEach(s => {
@@ -97,7 +96,7 @@ const OrdersTable = ({ onView, orders, onStatusChange }) => {
         <div className="
             bg-neutral-0 dark:bg-neutral-0
             border border-neutral-4 dark:border-neutral-4
-            rounded-3 overflow-hidden
+            rounded-md overflow-hidden
         ">
             {/* ── Recherche ── */}
             <div className="px-5 pt-4 pb-3 border-b border-neutral-4 dark:border-neutral-4">
@@ -120,7 +119,7 @@ const OrdersTable = ({ onView, orders, onStatusChange }) => {
             </div>
 
             {/* ── Onglets statut ── */}
-            <div className="flex items-center gap-0 overflow-x-auto border-b border-neutral-4 dark:border-neutral-4">
+            <div className="flex items-center overflow-x-auto border-b border-neutral-4 dark:border-neutral-4">
                 {STATUS_TABS.map(tab => (
                     <button
                         key={tab}
@@ -169,26 +168,34 @@ const OrdersTable = ({ onView, orders, onStatusChange }) => {
                         ) : filtered.map(order => (
                             <tr
                                 key={order.id}
-                                className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150"
+                                onClick={() => navigate(`/orders/${toUrlId(order.id)}`)}
+                                className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150 cursor-pointer"
                             >
                                 <td className="px-4 py-3 font-semibold text-primary-1">{order.id}</td>
                                 <td className="px-4 py-3 text-neutral-8 dark:text-neutral-8 whitespace-nowrap">
                                     {order.client.firstName} {order.client.lastName}
                                 </td>
-                                <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{order.client.city}</td>
+                                <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">
+                                    {order.client.city}
+                                </td>
                                 <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6">
                                     {order.items?.length} article{order.items?.length > 1 ? 's' : ''}
                                 </td>
                                 <td className="px-4 py-3 font-semibold text-neutral-8 dark:text-neutral-8 whitespace-nowrap">
                                     {formatPrice(calcTotal(order))}
                                 </td>
-                                <td className="px-4 py-3"><OrderStatusBadge status={order.status} /></td>
-                                <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{order.date}</td>
                                 <td className="px-4 py-3">
+                                    <OrderStatusBadge status={order.status} />
+                                </td>
+                                <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">
+                                    {order.date}
+                                </td>
+                                {/* Bouton œil — stoppe la propagation de la ligne */}
+                                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                     <button
-                                        onClick={() => onView?.(order)}
-                                        className="w-7 h-7 flex items-center justify-center rounded-1.5 text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors cursor-pointer"
+                                        onClick={() => navigate(`/orders/${toUrlId(order.id)}`)}
                                         title="Voir le détail"
+                                        className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-secondary-5 hover:text-secondary-1 transition-colors cursor-pointer"
                                     >
                                         <Eye size={14} />
                                     </button>

@@ -14,6 +14,7 @@ import Layout from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CategoryDetailPage from './pages/CategoryDetailPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
 import VillesPage from './pages/VillesPage';
@@ -157,6 +158,12 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/orders/:id" element={
+          <ProtectedRoute><Layout showSearch={false}>
+            <OrderDetailPage />
+          </Layout> </ProtectedRoute>
+        } />
+
         <Route
           path="/clients"
           element={
