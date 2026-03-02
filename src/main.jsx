@@ -15,6 +15,8 @@ import LoginPage from './pages/LoginPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CategoryDetailPage from './pages/CategoryDetailPage';
 import OrderDetailPage from './pages/OrderDetailPage';
+import ClientDetailPage from './pages/ClientDetailPage';
+import VilleDetailPage from './pages/VilleDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
 import VillesPage from './pages/VillesPage';
@@ -79,6 +81,18 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/cities/:id"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <VilleDetailPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/notifications"
           element={
@@ -174,6 +188,12 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/clients/:id" element={
+          <ProtectedRoute><Layout>
+            <ClientDetailPage />
+          </Layout>
+          </ProtectedRoute>
+        } />
         <Route
           path="/*"
           element={

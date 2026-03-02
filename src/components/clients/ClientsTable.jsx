@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Eye, PauseCircle, Ban, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import ClientStatusBadge, { CLIENT_STATUS_CONFIG } from './ClientStatusBadge';
 
 const formatPrice = (p) => `${Number(p).toLocaleString('fr-FR')} F`;
@@ -73,8 +74,8 @@ export const MOCK_CLIENTS = [
 ];
 
 const STATUS_TABS = ['Tous', ...Object.keys(CLIENT_STATUS_CONFIG)];
+const totalSpent = (client) => client.orders?.reduce((acc, o) => acc + o.total, 0) ?? 0;
 
-// Avatar initiales
 const ClientAvatar = ({ firstName, lastName }) => (
     <div className="w-8 h-8 rounded-full bg-primary-5 flex items-center justify-center shrink-0">
         <span className="text-xs font-bold font-poppins text-primary-1">
@@ -83,7 +84,8 @@ const ClientAvatar = ({ firstName, lastName }) => (
     </div>
 );
 
-const ClientsTable = ({ onView, onDisable, onBlock, onDelete, clients, setClients }) => {
+const ClientsTable = ({ onDisable, onBlock, onDelete, clients, setClients }) => {
+    const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState('Tous');
 
@@ -104,16 +106,13 @@ const ClientsTable = ({ onView, onDisable, onBlock, onDelete, clients, setClient
         return map;
     }, [clients]);
 
-    const totalSpent = (client) =>
-        client.orders?.reduce((acc, o) => acc + o.total, 0) ?? 0;
-
     return (
         <div className="
             bg-neutral-0 dark:bg-neutral-0
             border border-neutral-4 dark:border-neutral-4
-            rounded-3 overflow-hidden
+            rounded-md overflow-hidden
         ">
-            {/* Recherche */}
+            {/* ── Recherche ── */}
             <div className="px-5 pt-4 pb-3 border-b border-neutral-4 dark:border-neutral-4">
                 <div className="relative max-w-sm">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-6 pointer-events-none" />
@@ -133,8 +132,8 @@ const ClientsTable = ({ onView, onDisable, onBlock, onDelete, clients, setClient
                 </div>
             </div>
 
-            {/* Onglets statut */}
-            <div className="flex items-center gap-0 overflow-x-auto border-b border-neutral-4 dark:border-neutral-4">
+            {/* ── Onglets statut ── */}
+            <div className="flex items-center overflow-x-auto border-b border-neutral-4 dark:border-neutral-4">
                 {STATUS_TABS.map(tab => (
                     <button
                         key={tab}
@@ -159,7 +158,7 @@ const ClientsTable = ({ onView, onDisable, onBlock, onDelete, clients, setClient
                 ))}
             </div>
 
-            {/* Tableau */}
+            {/* ── Tableau ── */}
             <div className="overflow-x-auto">
                 <table className="w-full text-xs font-poppins">
                     <thead>
@@ -181,7 +180,8 @@ const ClientsTable = ({ onView, onDisable, onBlock, onDelete, clients, setClient
                         ) : filtered.map(client => (
                             <tr
                                 key={client.id}
-                                className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150"
+                                onClick={() => navigate(`/clients/${client.id}`)}
+                                className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150 cursor-pointer"
                             >
                                 {/* Client */}
                                 <td className="px-4 py-3">
@@ -195,52 +195,50 @@ const ClientsTable = ({ onView, onDisable, onBlock, onDelete, clients, setClient
                                 <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{client.phone}</td>
                                 <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{client.city}</td>
                                 <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{client.registeredAt}</td>
-
-                                {/* Commandes */}
                                 <td className="px-4 py-3">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary-5 text-primary-1 font-semibold text-[11px]">
                                         {client.orders?.length ?? 0}
                                     </span>
                                 </td>
-
-                                {/* Total dépensé */}
                                 <td className="px-4 py-3 font-semibold text-neutral-8 dark:text-neutral-8 whitespace-nowrap">
                                     {formatPrice(totalSpent(client))}
                                 </td>
-
-                                {/* Statut */}
                                 <td className="px-4 py-3">
                                     <ClientStatusBadge status={client.status} />
                                 </td>
 
-                                {/* Actions */}
-                                <td className="px-4 py-3">
+                                {/* Actions — stopPropagation pour ne pas déclencher la navigation de la ligne */}
+                                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                     <div className="flex items-center gap-1.5">
+                                        {/* Voir la fiche */}
                                         <button
-                                            onClick={() => onView?.(client)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors cursor-pointer"
+                                            onClick={() => navigate(`/clients/${client.id}`)}
                                             title="Voir la fiche"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-secondary-5 hover:text-secondary-1 transition-colors cursor-pointer"
                                         >
                                             <Eye size={14} />
                                         </button>
+                                        {/* Désactiver / Réactiver */}
                                         <button
                                             onClick={() => onDisable?.(client)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-warning-2 hover:text-warning-1 transition-colors cursor-pointer"
                                             title={client.status === 'Désactivé' ? 'Réactiver' : 'Désactiver'}
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-warning-2 hover:text-warning-1 transition-colors cursor-pointer"
                                         >
                                             <PauseCircle size={14} />
                                         </button>
+                                        {/* Bloquer / Débloquer */}
                                         <button
                                             onClick={() => onBlock?.(client)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                             title={client.status === 'Bloqué' ? 'Débloquer' : 'Bloquer'}
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                         >
                                             <Ban size={14} />
                                         </button>
+                                        {/* Supprimer */}
                                         <button
                                             onClick={() => onDelete?.(client)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                             title="Supprimer"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                         >
                                             <Trash2 size={14} />
                                         </button>

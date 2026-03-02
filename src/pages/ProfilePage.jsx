@@ -32,7 +32,7 @@ const ProfilePage = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 max-w-2xl">
+        <div className="flex flex-col gap-6">
 
             {/* ── En-tête page ── */}
             <div>
@@ -44,20 +44,28 @@ const ProfilePage = () => {
                 </p>
             </div>
 
-            {/* ── Header profil ── */}
-            <ProfileHeader
-                profile={profile}
-                onAvatarChange={handleAvatarChange}
-            />
+            {/* ── ProfileHeader + ProfileInfoForm ──
+                Mobile  : empilés (flex-col)
+                Desktop : côte à côte (md:flex-row)
+                ProfileHeader prend 2/5, ProfileInfoForm prend le reste
+            ── */}
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="w-full md:w-2/5 shrink-0">
+                    <ProfileHeader
+                        profile={profile}
+                        onAvatarChange={handleAvatarChange}
+                    />
+                </div>
+                <div className="w-full md:flex-1 min-w-0">
+                    <ProfileInfoForm
+                        profile={profile}
+                        onSave={handleInfoSave}
+                    />
+                </div>
+            </div>
 
-            {/* ── Formulaire infos ── */}
-            <ProfileInfoForm
-                profile={profile}
-                onSave={handleInfoSave}
-            />
-
-            {/* ── Formulaire mot de passe ── */}
-            <ProfilePasswordForm />
+            {/* ── Mot de passe — pleine largeur ── 
+            <ProfilePasswordForm />*/}
         </div>
     );
 };

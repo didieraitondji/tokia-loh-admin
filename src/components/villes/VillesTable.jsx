@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import React from 'react';
+import { Pencil, Trash2, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import ProductStatusToggle from '../products/ProductStatusToggle';
 
 const formatPrice = (p) => `${Number(p).toLocaleString('fr-FR')} F`;
@@ -16,9 +17,8 @@ export const MOCK_VILLES = [
     { id: 8, name: 'Gagnoa', fee: 2000, orders: 7, active: true },
 ];
 
-// Avatar lettre pour la ville
 const VilleAvatar = ({ name }) => (
-    <div className="w-9 h-9 rounded-2 bg-secondary-5 flex items-center justify-center shrink-0">
+    <div className="w-9 h-9 rounded-md bg-secondary-5 flex items-center justify-center shrink-0">
         <span className="text-xs font-bold font-poppins text-secondary-1 uppercase">
             {name.slice(0, 2)}
         </span>
@@ -26,11 +26,10 @@ const VilleAvatar = ({ name }) => (
 );
 
 const VillesTable = ({ onEdit, onDelete, villes, setVilles }) => {
+    const navigate = useNavigate();
 
     const handleToggle = (id) => {
-        setVilles(prev =>
-            prev.map(v => v.id === id ? { ...v, active: !v.active } : v)
-        );
+        setVilles(prev => prev.map(v => v.id === id ? { ...v, active: !v.active } : v));
         // TODO : appel API PATCH /villes/:id/status
     };
 
@@ -38,7 +37,7 @@ const VillesTable = ({ onEdit, onDelete, villes, setVilles }) => {
         <div className="
             bg-neutral-0 dark:bg-neutral-0
             border border-neutral-4 dark:border-neutral-4
-            rounded-3 overflow-hidden
+            rounded-md overflow-hidden
         ">
             <div className="overflow-x-auto">
                 <table className="w-full text-xs font-poppins">
@@ -55,7 +54,8 @@ const VillesTable = ({ onEdit, onDelete, villes, setVilles }) => {
                         {villes.map(ville => (
                             <tr
                                 key={ville.id}
-                                className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150"
+                                onClick={() => navigate(`/villes/${ville.id}`)}
+                                className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150 cursor-pointer"
                             >
                                 {/* Ville */}
                                 <td className="px-5 py-3">
@@ -88,7 +88,7 @@ const VillesTable = ({ onEdit, onDelete, villes, setVilles }) => {
                                 </td>
 
                                 {/* Toggle statut */}
-                                <td className="px-5 py-3">
+                                <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
                                     <ProductStatusToggle
                                         active={ville.active}
                                         onChange={() => handleToggle(ville.id)}
@@ -96,19 +96,32 @@ const VillesTable = ({ onEdit, onDelete, villes, setVilles }) => {
                                 </td>
 
                                 {/* Actions */}
-                                <td className="px-5 py-3">
-                                    <div className="flex items-center gap-2">
+                                <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                                    <div className="flex items-center gap-1.5">
+
+                                        {/* Voir le détail → /villes/:id */}
+                                        <button
+                                            onClick={() => navigate(`/cities/${ville.id}`)}
+                                            title="Voir le détail"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-secondary-5 hover:text-secondary-1 transition-colors cursor-pointer"
+                                        >
+                                            <Eye size={14} />
+                                        </button>
+
+                                        {/* Modifier */}
                                         <button
                                             onClick={() => onEdit?.(ville)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors cursor-pointer"
                                             title="Modifier"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors cursor-pointer"
                                         >
                                             <Pencil size={14} />
                                         </button>
+
+                                        {/* Supprimer */}
                                         <button
                                             onClick={() => onDelete?.(ville)}
-                                            className="w-7 h-7 flex items-center justify-center rounded-2 text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                             title="Supprimer"
+                                            className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors cursor-pointer"
                                         >
                                             <Trash2 size={14} />
                                         </button>
