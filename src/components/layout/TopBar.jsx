@@ -220,7 +220,7 @@ const TopBar = ({ onMenuToggle, showSearch = true }) => {
                             border border-neutral-4 dark:border-neutral-4
                             rounded-3 shadow-lg overflow-hidden
                         ">
-                                {/*<button
+                                <button
                                     onClick={() => { navigate('/profile'); setUserMenuOpen(false); }}
                                     className="
                                     flex items-center gap-3 w-full px-4 py-2.5
@@ -232,7 +232,7 @@ const TopBar = ({ onMenuToggle, showSearch = true }) => {
                                 >
                                     <User size={15} />
                                     Mon profil
-                                </button> */}
+                                </button>
                                 <button
                                     onClick={() => { navigate('/settings'); setUserMenuOpen(false); }}
                                     className="

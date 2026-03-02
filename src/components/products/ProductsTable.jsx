@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Pencil, Trash2, Star, Filter } from 'lucide-react';
+import { Search, Pencil, Trash2, Star, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import ProductStatusToggle from './ProductStatusToggle';
 import ProductBadge from './ProductBadge';
 
@@ -30,9 +31,8 @@ const getStockBadgeType = (stock) => {
     return null;
 };
 
-// Avatar produit sans image
 const ProductAvatar = ({ name }) => (
-    <div className="w-10 h-10 rounded-2 bg-secondary-5 flex items-center justify-center shrink-0">
+    <div className="w-10 h-10 rounded-md bg-secondary-5 flex items-center justify-center shrink-0">
         <span className="text-xs font-bold font-poppins text-secondary-1 uppercase">
             {name.slice(0, 2)}
         </span>
@@ -40,13 +40,14 @@ const ProductAvatar = ({ name }) => (
 );
 
 const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) => {
+    const navigate = useNavigate();
+
     const [search, setSearch] = useState('');
     const [catFilter, setCatFilter] = useState('Toutes');
-    const [stockFilter, setStockFilter] = useState('all');   // all | low | out
-    const [statusFilter, setStatusFilter] = useState('all');   // all | active | inactive
+    const [stockFilter, setStockFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [products, setProducts] = useState(MOCK_PRODUCTS);
 
-    // Handlers locaux (à brancher sur l'API)
     const handleToggleStatus = (id) => {
         setProducts(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
         onToggleStatus?.(id);
@@ -57,7 +58,6 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
         onToggleFeatured?.(id);
     };
 
-    // Filtrage
     const filtered = useMemo(() => {
         return products.filter(p => {
             const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -76,12 +76,10 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
         <div className="
             bg-neutral-0 dark:bg-neutral-0
             border border-neutral-4 dark:border-neutral-4
-            rounded-3 overflow-hidden
+            rounded-md overflow-hidden
         ">
             {/* ── Barre de recherche + filtres ── */}
             <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-neutral-4 dark:border-neutral-4">
-
-                {/* Recherche */}
                 <div className="relative flex-1 min-w-48">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-6 pointer-events-none" />
                     <input
@@ -99,53 +97,25 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                     />
                 </div>
 
-                {/* Filtre catégorie */}
-                <select
-                    value={catFilter}
-                    onChange={e => setCatFilter(e.target.value)}
-                    className="
-                        px-3 py-2 text-xs font-poppins rounded-full cursor-pointer
-                        bg-neutral-3 dark:bg-neutral-3 border border-transparent
-                        text-neutral-7 dark:text-neutral-7 outline-none
-                        focus:border-primary-1 transition-all duration-200
-                    "
-                >
+                <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+                    className="px-3 py-2 text-xs font-poppins rounded-full cursor-pointer bg-neutral-3 dark:bg-neutral-3 border border-transparent text-neutral-7 dark:text-neutral-7 outline-none focus:border-primary-1 transition-all duration-200">
                     {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
 
-                {/* Filtre stock */}
-                <select
-                    value={stockFilter}
-                    onChange={e => setStockFilter(e.target.value)}
-                    className="
-                        px-3 py-2 text-xs font-poppins rounded-full cursor-pointer
-                        bg-neutral-3 dark:bg-neutral-3 border border-transparent
-                        text-neutral-7 dark:text-neutral-7 outline-none
-                        focus:border-primary-1 transition-all duration-200
-                    "
-                >
+                <select value={stockFilter} onChange={e => setStockFilter(e.target.value)}
+                    className="px-3 py-2 text-xs font-poppins rounded-full cursor-pointer bg-neutral-3 dark:bg-neutral-3 border border-transparent text-neutral-7 dark:text-neutral-7 outline-none focus:border-primary-1 transition-all duration-200">
                     <option value="all">Tout le stock</option>
                     <option value="low">Stock faible</option>
                     <option value="out">Rupture</option>
                 </select>
 
-                {/* Filtre statut */}
-                <select
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value)}
-                    className="
-                        px-3 py-2 text-xs font-poppins rounded-full cursor-pointer
-                        bg-neutral-3 dark:bg-neutral-3 border border-transparent
-                        text-neutral-7 dark:text-neutral-7 outline-none
-                        focus:border-primary-1 transition-all duration-200
-                    "
-                >
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 text-xs font-poppins rounded-full cursor-pointer bg-neutral-3 dark:bg-neutral-3 border border-transparent text-neutral-7 dark:text-neutral-7 outline-none focus:border-primary-1 transition-all duration-200">
                     <option value="all">Tous les statuts</option>
                     <option value="active">Actifs</option>
                     <option value="inactive">Inactifs</option>
                 </select>
 
-                {/* Compteur résultats */}
                 <span className="text-[11px] font-poppins text-neutral-6 whitespace-nowrap ml-auto">
                     {filtered.length} produit{filtered.length > 1 ? 's' : ''}
                 </span>
@@ -175,10 +145,8 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                             const stockBadge = getStockBadgeType(product.stock);
 
                             return (
-                                <tr
-                                    key={product.id}
-                                    className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150"
-                                >
+                                <tr key={product.id} className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150">
+
                                     {/* Produit */}
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
@@ -190,9 +158,7 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                                     </td>
 
                                     {/* Catégorie */}
-                                    <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">
-                                        {product.category}
-                                    </td>
+                                    <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{product.category}</td>
 
                                     {/* Prix */}
                                     <td className="px-4 py-3 whitespace-nowrap">
@@ -226,42 +192,45 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                                         </div>
                                     </td>
 
-                                    {/* Statut toggle */}
+                                    {/* Statut */}
                                     <td className="px-4 py-3">
-                                        <ProductStatusToggle
-                                            active={product.active}
-                                            onChange={() => handleToggleStatus(product.id)}
-                                        />
+                                        <ProductStatusToggle active={product.active} onChange={() => handleToggleStatus(product.id)} />
                                     </td>
 
                                     {/* Vedette */}
                                     <td className="px-4 py-3">
-                                        <button
-                                            onClick={() => handleToggleFeatured(product.id)}
-                                            title={product.featured ? 'Retirer des vedettes' : 'Mettre en vedette'}
-                                            className="cursor-pointer transition-colors duration-200"
-                                        >
-                                            <Star
-                                                size={16}
-                                                className={product.featured ? 'fill-warning-1 text-warning-1' : 'text-neutral-4'}
-                                            />
+                                        <button onClick={() => handleToggleFeatured(product.id)} title={product.featured ? 'Retirer des vedettes' : 'Mettre en vedette'} className="cursor-pointer transition-colors duration-200">
+                                            <Star size={16} className={product.featured ? 'fill-warning-1 text-warning-1' : 'text-neutral-4'} />
                                         </button>
                                     </td>
 
-                                    {/* Actions */}
+                                    {/* ── Actions ── */}
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5">
+
+                                            {/* Voir le détail → /products/:id */}
+                                            <button
+                                                onClick={() => navigate(`/products/${product.id}`)}
+                                                title="Voir le détail"
+                                                className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-secondary-5 hover:text-secondary-1 transition-colors duration-150 cursor-pointer"
+                                            >
+                                                <Eye size={14} />
+                                            </button>
+
+                                            {/* Modifier */}
                                             <button
                                                 onClick={() => onEdit?.(product)}
-                                                className="w-7 h-7 flex items-center justify-center rounded-1.5 text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors duration-150 cursor-pointer"
                                                 title="Modifier"
+                                                className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-primary-5 hover:text-primary-1 transition-colors duration-150 cursor-pointer"
                                             >
                                                 <Pencil size={14} />
                                             </button>
+
+                                            {/* Supprimer */}
                                             <button
                                                 onClick={() => onDelete?.(product)}
-                                                className="w-7 h-7 flex items-center justify-center rounded-1.5 text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors duration-150 cursor-pointer"
                                                 title="Supprimer"
+                                                className="w-7 h-7 flex items-center justify-center rounded-md text-neutral-6 hover:bg-danger-2 hover:text-danger-1 transition-colors duration-150 cursor-pointer"
                                             >
                                                 <Trash2 size={14} />
                                             </button>

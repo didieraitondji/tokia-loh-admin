@@ -7,7 +7,7 @@ const LogoutConfirmModal = ({ isOpen, onConfirm, onCancel }) => {
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 bg-black/50 z-40 animate-fade-in"
+                className="z-50 fixed top-0 left-0 right-0 bottom-0 bg-red-500 "
                 onClick={onCancel}
             />
 
@@ -47,11 +47,11 @@ const LogoutConfirmModal = ({ isOpen, onConfirm, onCancel }) => {
                     </p>
 
                     {/* Boutons */}
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-col md:flex-row">
                         {/* Bouton Annuler */}
                         <button
                             onClick={onCancel}
-                            className="flex-1 px-4 py-3 cursor-pointer rounded-md border-2 border-neutral-5 text-neutral-8 font-medium text-body hover:bg-neutral-3 transition-colors"
+                            className="flex-1 px-4 py-3 cursor-pointer rounded-md border-2 border-neutral-5 text-neutral-8 font-medium text-body hover:bg-neutral-3 transition-colors hidden md:block"
                         >
                             Annuler
                         </button>
@@ -62,6 +62,14 @@ const LogoutConfirmModal = ({ isOpen, onConfirm, onCancel }) => {
                             className="flex-1 px-4 py-3 cursor-pointer rounded-md bg-danger-1 text-white font-medium text-body hover:bg-[#DC2626] transition-colors"
                         >
                             Se déconnecter
+                        </button>
+
+                        {/* Bouton Annuler */}
+                        <button
+                            onClick={onCancel}
+                            className="flex-1 px-4 py-3 cursor-pointer rounded-md border-2 border-neutral-5 text-neutral-8 font-medium text-body hover:bg-neutral-3 transition-colors md:hidden"
+                        >
+                            Annuler
                         </button>
                     </div>
                 </div>

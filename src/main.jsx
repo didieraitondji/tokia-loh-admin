@@ -12,6 +12,7 @@ import Layout from './components/layout/Layout';
 
 // importation de mes composants de pages
 import LoginPage from './pages/LoginPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
 import VillesPage from './pages/VillesPage';
@@ -59,6 +60,12 @@ const App = () => {
               </Layout>
             </ProtectedRoute>
           }
+        />
+        <Route path="/products/:id" element={
+          <ProtectedRoute>
+            <Layout showSearch={false}>
+              <ProductDetailPage /></Layout>
+          </ProtectedRoute>}
         />
         <Route
           path="/cities"
@@ -110,7 +117,7 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-        {/*<Route
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>
@@ -119,7 +126,7 @@ const App = () => {
               </Layout>
             </ProtectedRoute>
           }
-        /> */}
+        />
         <Route
           path="/categories"
           element={
