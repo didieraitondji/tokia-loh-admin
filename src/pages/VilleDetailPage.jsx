@@ -70,7 +70,7 @@ const VilleDetailPage = () => {
             <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => navigate('/villes')}
+                        onClick={() => navigate(-1)}
                         className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-3 dark:hover:bg-neutral-3 text-neutral-6 hover:text-neutral-8 transition-colors cursor-pointer"
                         title="Retour aux villes"
                     >
