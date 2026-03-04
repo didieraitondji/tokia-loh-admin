@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import ProductsTable from '../components/products/ProductsTable';
 import ProductFormModal from '../components/products/ProductFormModal';
 import StatCard from '../components/dashboard/StatCard';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const ProductsPage = () => {
     const [modalOpen, setModalOpen] = useState(false);
@@ -41,10 +42,13 @@ const ProductsPage = () => {
 
     // Suppression
     const handleDelete = (product) => {
-        // TODO : confirmation + appel API delete
-        if (window.confirm(`Supprimer "${product.name}" ?`)) {
-            console.log('Suppression produit :', product.id);
-        }
+        setDeleteTarget(product);
+    };
+
+    const handleConfirmDelete = () => {
+        // TODO : appel API delete
+        console.log('Suppression produit :', deleteTarget.id);
+        setDeleteTarget(null);
     };
 
     return (
@@ -118,6 +122,15 @@ const ProductsPage = () => {
                 onClose={handleClose}
                 product={selectedProduct}
                 onSave={handleSave}
+            />
+
+            {/* ── Modal de confirmation de suppression ── */}
+            <DeleteConfirmModal
+                isOpen={!!deleteTarget}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setDeleteTarget(null)}
+                title="Supprimer le produit"
+                message={`Voulez-vous vraiment supprimer "${deleteTarget?.name}" ? Cette action est irréversible.`}
             />
         </div>
     );

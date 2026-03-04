@@ -79,12 +79,13 @@ const VillesPage = () => {
                     iconPosition="left"
                     onClick={handleCreate}
                 >
-                    Nouvelle ville
+                    <span className="hidden md:inline">
+                        Nouvelle ville</span>
                 </Button>
             </div>
 
             {/* ── Stats ── */}
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
                     title="Total villes"
                     value={String(total)}

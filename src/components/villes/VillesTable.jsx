@@ -54,7 +54,7 @@ const VillesTable = ({ onEdit, onDelete, villes, setVilles }) => {
                         {villes.map(ville => (
                             <tr
                                 key={ville.id}
-                                onClick={() => navigate(`/villes/${ville.id}`)}
+                                onClick={() => navigate(`/cities/${ville.id}`)}
                                 className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150 cursor-pointer"
                             >
                                 {/* Ville */}
@@ -82,7 +82,7 @@ const VillesTable = ({ onEdit, onDelete, villes, setVilles }) => {
 
                                 {/* Nb commandes */}
                                 <td className="px-5 py-3">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary-5 text-primary-1 font-semibold text-[11px]">
+                                    <span className="inline-flex items-center w-max px-2.5 py-1 rounded-full bg-primary-5 text-primary-1 font-semibold text-[11px]">
                                         {ville.orders} commande{ville.orders > 1 ? 's' : ''}
                                     </span>
                                 </td>

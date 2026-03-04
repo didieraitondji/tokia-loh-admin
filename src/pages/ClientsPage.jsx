@@ -2,9 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Users, UserCheck, UserMinus, UserX } from 'lucide-react';
 import StatCard from '../components/dashboard/StatCard';
 import ClientsTable, { MOCK_CLIENTS } from '../components/clients/ClientsTable';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import { useToast } from '../hooks/useToast';
+import ToastContainer from '../components/ToastContainer';
 
 const ClientsPage = () => {
+    const [deleteTarget, setDeleteTarget] = useState(null);
     const [clients, setClients] = useState(MOCK_CLIENTS);
+    const { toasts, showToast, removeToast } = useToast();
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Clients';
@@ -25,9 +30,19 @@ const ClientsPage = () => {
     };
 
     const handleDelete = (client) => {
-        if (!window.confirm(`Supprimer définitivement "${client.firstName} ${client.lastName}" ?`)) return;
-        setClients(prev => prev.filter(c => c.id !== client.id));
-        // TODO : appel API DELETE /clients/:id
+        setDeleteTarget(client);
+
+    };
+
+    const handleConfirmDelete = () => {
+        setClients(prev => prev.filter(c => c.id !== deleteTarget.id));
+        setDeleteTarget(null);
+        showToast({ message: 'Client supprimé avec succès.' });
+    };
+
+    const handleCancelDelete = () => {
+        setDeleteTarget(null);
+        showToast({ message: 'Suppression annulée.', type: 'info' });
     };
 
     // ── Stats ─────────────────────────────────────────────────
@@ -50,7 +65,7 @@ const ClientsPage = () => {
             </div>
 
             {/* ── Stats ── */}
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
                     title="Total clients"
                     value={String(total)}
@@ -87,6 +102,16 @@ const ClientsPage = () => {
                 onBlock={handleBlock}
                 onDelete={handleDelete}
             />
+            <DeleteConfirmModal
+                isOpen={!!deleteTarget}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+                title="Supprimer le client"
+                message={`Voulez-vous vraiment supprimer définitivement "${deleteTarget?.firstName} ${deleteTarget?.lastName}" ? Cette action est irréversible.`}
+            />
+
+            {/* ── Toasts ── */}
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 };

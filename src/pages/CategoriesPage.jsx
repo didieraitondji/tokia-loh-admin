@@ -4,10 +4,12 @@ import Button from '../components/Button';
 import StatCard from '../components/dashboard/StatCard';
 import CategoriesTable from '../components/categories/CategoriesTable';
 import CategoryFormModal from '../components/categories/CategoryFormModal';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const CategoriesPage = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Catégories';
@@ -34,16 +36,13 @@ const CategoriesPage = () => {
     };
 
     const handleDelete = (category) => {
-        if (category.products > 0) {
-            alert(`Impossible de supprimer "${category.name}" : ${category.products} produit(s) sont associés à cette catégorie.`);
-            return;
-        }
-        if (window.confirm(`Supprimer la catégorie "${category.name}" ?`)) {
-            // TODO : appel API delete
-            console.log('Suppression catégorie :', category.id);
-        }
+        setDeleteTarget(category); // ouvre toujours le modal
     };
 
+    const handleConfirmDelete = () => {
+        console.log('Suppression catégorie :', deleteTarget.id);
+        setDeleteTarget(null);
+    };
     return (
         <div className="flex flex-col gap-6">
 
@@ -112,6 +111,23 @@ const CategoriesPage = () => {
                 onClose={handleClose}
                 category={selectedCategory}
                 onSave={handleSave}
+            />
+
+            <DeleteConfirmModal
+                isOpen={!!deleteTarget}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setDeleteTarget(null)}
+                mode={deleteTarget?.products > 0 ? 'error' : 'confirm'}
+                title={
+                    deleteTarget?.products > 0
+                        ? 'Suppression impossible'
+                        : 'Supprimer la catégorie'
+                }
+                message={
+                    deleteTarget?.products > 0
+                        ? `Impossible de supprimer "${deleteTarget?.name}" : ${deleteTarget?.products} produit(s) sont associés à cette catégorie.`
+                        : `Voulez-vous vraiment supprimer "${deleteTarget?.name}" ? Cette action est irréversible.`
+                }
             />
         </div>
     );

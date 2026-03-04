@@ -153,7 +153,7 @@ const PublishPage = () => {
                     iconPosition="left"
                     onClick={handleCreate}
                 >
-                    Nouvelle campagne
+                    <span className="hidden sm:inline">Nouvelle campagne</span>
                 </Button>
             </div>
 

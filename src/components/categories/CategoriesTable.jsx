@@ -113,7 +113,7 @@ const CategoriesTable = ({ onEdit, onDelete }) => {
 
                                 {/* Nb produits */}
                                 <td className="px-5 py-3">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary-5 text-primary-1 font-semibold text-[11px]">
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-5 text-primary-1 font-semibold text-[11px] w-max">
                                         {cat.products} produit{cat.products > 1 ? 's' : ''}
                                     </span>
                                 </td>
