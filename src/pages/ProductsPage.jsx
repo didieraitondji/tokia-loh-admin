@@ -68,12 +68,12 @@ const ProductsPage = () => {
                     iconPosition="left"
                     onClick={handleCreate}
                 >
-                    Nouveau produit
+                    <span className='hidden md:inline'>Nouveau produit</span>
                 </Button>
             </div>
 
             {/* ── Stats rapides ── */}
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
                     title="Total produits"
                     value="84"

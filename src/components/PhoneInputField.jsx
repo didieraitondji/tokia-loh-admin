@@ -2,7 +2,6 @@ import React from 'react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
-// ✅ Déclaré EN DEHORS du composant pour éviter la recréation à chaque rendu
 const CustomInput = React.forwardRef(({ name, required, ...inputProps }, ref) => (
     <input {...inputProps} ref={ref} name={name} required={required} />
 ));

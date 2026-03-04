@@ -65,12 +65,12 @@ const CategoriesPage = () => {
                     iconPosition="left"
                     onClick={handleCreate}
                 >
-                    Nouvelle catégorie
+                    <span className='hidden md:inline'>Nouvelle catégorie</span>
                 </Button>
             </div>
 
             {/* ── Stats rapides ── */}
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 <StatCard
                     title="Total catégories"
                     value="6"

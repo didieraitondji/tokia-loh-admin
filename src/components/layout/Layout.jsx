@@ -46,6 +46,7 @@ const Layout = ({ children, showSearch = true }) => {
                 <Sidebar
                     collapsed={false}
                     onToggle={() => setMobileOpen(false)}
+                    onNavigate={() => setMobileOpen(false)}
                 />
             </div>
 

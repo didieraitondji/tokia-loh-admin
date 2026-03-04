@@ -28,10 +28,11 @@ const navSecondary = [
 ];
 
 // ── NavItem ──────────────────────────────────────────────────────
-const NavItem = ({ to, icon: Icon, label, collapsed }) => (
+const NavItem = ({ to, icon: Icon, label, collapsed, onNavigate }) => (
     <NavLink
         to={to}
         title={collapsed ? label : ''}
+        onClick={onNavigate}
         className={({ isActive }) => `
             flex items-center gap-3 px-3 py-2.5 rounded-2
             text-sm font-medium font-poppins
@@ -61,7 +62,7 @@ const NavItem = ({ to, icon: Icon, label, collapsed }) => (
 );
 
 // ── Sidebar ──────────────────────────────────────────────────────
-const Sidebar = ({ collapsed, onToggle }) => {
+const Sidebar = ({ collapsed, onToggle, onNavigate }) => {
     const navigate = useNavigate();
     const { logout } = useAuth();
 
@@ -69,6 +70,8 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
     const handleLogoutClick = () => {
         setIsLogoutModalOpen(true);
+        // fermer la sidebar si on clique sur le bouton de logout
+        onToggle();
     };
 
     const handleConfirmLogout = () => {
@@ -113,14 +116,14 @@ const Sidebar = ({ collapsed, onToggle }) => {
                 {/* ── Navigation principale ── */}
                 <nav className="flex flex-col gap-1 px-2 pt-4 flex-1 overflow-y-auto overflow-x-hidden">
                     {navMain.map(item => (
-                        <NavItem key={item.to} {...item} collapsed={collapsed} />
+                        <NavItem key={item.to} {...item} collapsed={collapsed} onNavigate={onNavigate} />
                     ))}
 
                     {/* Séparateur */}
                     <div className="my-3 border-t border-neutral-4 dark:border-neutral-4" />
 
                     {navSecondary.map(item => (
-                        <NavItem key={item.to} {...item} collapsed={collapsed} />
+                        <NavItem key={item.to} {...item} collapsed={collapsed} onNavigate={onNavigate} />
                     ))}
                 </nav>
 
