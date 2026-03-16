@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-    ShoppingCart, Clock, CheckCircle, XCircle,
-    TrendingUp, Users
+    ShoppingCart, Clock, CheckCircle, XCircle, Users, TrendingUp
 } from 'lucide-react';
+import { useDashboard } from '../hooks/useDashboard';
 import StatCard from '../components/dashboard/StatCard';
 import RecentOrders from '../components/dashboard/RecentOrders';
 import LowStockList from '../components/dashboard/LowStockList';
@@ -10,86 +10,79 @@ import SalesChart from '../components/dashboard/SalesChart';
 import TopCities from '../components/dashboard/TopCities';
 import DateRangeFilter from '../components/dashboard/DateRangeFilter';
 
-// Données mock CA — à remplacer par l'API
-const CA_DATA = {
-    day: { value: '48 500 F', trend: 'up', trendLabel: '+8% hier' },
-    week: { value: '312 000 F', trend: 'up', trendLabel: '+15% sem. passée' },
-    month: { value: '1 240 000 F', trend: 'down', trendLabel: '-3% mois passé' },
-};
-
 const CA_FILTERS = [
     { key: 'day', label: "Aujourd'hui" },
     { key: 'week', label: 'Cette semaine' },
     { key: 'month', label: 'Ce mois' },
 ];
 
+// Formatte un montant en FCFA
+const formatCFA = (amount) =>
+    amount ? `${Number(amount).toLocaleString('fr-FR')} F` : '— F';
+
 const DashboardPage = () => {
+    const { stats, loading, error } = useDashboard();
+
+    const [caFilter, setCaFilter] = useState('day');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [activeFilter, setActiveFilter] = useState('all');
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Tableau de bord';
     }, []);
 
-    const [caFilter, setCaFilter] = useState('day');
-    // États pour les filtres de date
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [activeFilter, setActiveFilter] = useState('all');
-
-    const ca = CA_DATA[caFilter];
-
-    // Fonction pour gérer les changements de date
     const handleDateChange = (type, value) => {
-        if (type === 'start') {
-            setStartDate(value);
-        } else {
-            setEndDate(value);
-        }
-        // Réinitialiser le filtre rapide quand on sélectionne des dates manuellement
+        if (type === 'start') setStartDate(value);
+        else setEndDate(value);
         setActiveFilter('custom');
     };
 
-    // Fonction pour gérer les filtres rapides
     const handleQuickFilter = (filterKey) => {
         setActiveFilter(filterKey);
-
         const today = new Date();
-        const formatDate = (date) => date.toISOString().split('T')[0];
-
-        switch (filterKey) {
-            case 'all':
-                setStartDate('');
-                setEndDate('');
-                break;
-            case 'today':
-                setStartDate(formatDate(today));
-                setEndDate(formatDate(today));
-                break;
-            case 'week':
-                const weekAgo = new Date(today);
-                weekAgo.setDate(today.getDate() - 7);
-                setStartDate(formatDate(weekAgo));
-                setEndDate(formatDate(today));
-                break;
-            case 'month':
-                const monthAgo = new Date(today);
-                monthAgo.setMonth(today.getMonth() - 1);
-                setStartDate(formatDate(monthAgo));
-                setEndDate(formatDate(today));
-                break;
-            default:
-                break;
+        const fmt = (d) => d.toISOString().split('T')[0];
+        if (filterKey === 'all') { setStartDate(''); setEndDate(''); }
+        if (filterKey === 'today') { setStartDate(fmt(today)); setEndDate(fmt(today)); }
+        if (filterKey === 'week') {
+            const w = new Date(today); w.setDate(today.getDate() - 7);
+            setStartDate(fmt(w)); setEndDate(fmt(today));
         }
-
-        // TODO: Appeler l'API avec les dates sélectionnées
-        console.log('Filtrer les données entre', startDate, 'et', endDate);
+        if (filterKey === 'month') {
+            const m = new Date(today); m.setMonth(today.getMonth() - 1);
+            setStartDate(fmt(m)); setEndDate(fmt(today));
+        }
+        // TODO : passer startDate/endDate à l'API
     };
+
+    // ── Squelette de chargement ───────────────────────────────
+    if (loading) return (
+        <div className="flex flex-col gap-6 animate-pulse">
+            <div className="h-8 w-48 bg-neutral-3 rounded-2" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-28 bg-neutral-3 dark:bg-neutral-3 rounded-3" />
+                ))}
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                <div className="xl:col-span-2 h-72 bg-neutral-3 dark:bg-neutral-3 rounded-3" />
+                <div className="h-72 bg-neutral-3 dark:bg-neutral-3 rounded-3" />
+            </div>
+        </div>
+    );
+
+    // ── Erreur ────────────────────────────────────────────────
+    if (error) return (
+        <div className="flex items-center justify-center h-48">
+            <p className="text-sm font-poppins text-danger-1">{error}</p>
+        </div>
+    );
 
     return (
         <div className="flex flex-col gap-6">
 
-            {/* ── Header avec titre + filtres ── */}
+            {/* ── Header ── */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                {/* Titre */}
                 <div>
                     <h1 className="text-h5 font-bold font-poppins text-neutral-8 dark:text-neutral-8">
                         Dashboard
@@ -98,8 +91,6 @@ const DashboardPage = () => {
                         Vue globale de l'activité Tokia-Loh
                     </p>
                 </div>
-
-                {/* Filtres de date */}
                 <DateRangeFilter
                     startDate={startDate}
                     endDate={endDate}
@@ -109,11 +100,11 @@ const DashboardPage = () => {
                 />
             </div>
 
-            {/* ── Cards de stats ── */}
+            {/* ── StatCards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
                     title="Commandes totales"
-                    value="1 042"
+                    value={stats?.total_orders?.toLocaleString('fr-FR') ?? '—'}
                     icon={<ShoppingCart size={18} />}
                     trend="up"
                     trendLabel="+24 ce mois"
@@ -121,7 +112,7 @@ const DashboardPage = () => {
                 />
                 <StatCard
                     title="En attente"
-                    value="18"
+                    value={stats?.pending_orders?.toLocaleString('fr-FR') ?? '—'}
                     icon={<Clock size={18} />}
                     trend="neutral"
                     trendLabel="Stable"
@@ -129,7 +120,7 @@ const DashboardPage = () => {
                 />
                 <StatCard
                     title="Livrées"
-                    value="976"
+                    value={stats?.delivered_orders?.toLocaleString('fr-FR') ?? '—'}
                     icon={<CheckCircle size={18} />}
                     trend="up"
                     trendLabel="+12% ce mois"
@@ -137,7 +128,7 @@ const DashboardPage = () => {
                 />
                 <StatCard
                     title="Annulées"
-                    value="48"
+                    value={stats?.cancelled_orders?.toLocaleString('fr-FR') ?? '—'}
                     icon={<XCircle size={18} />}
                     trend="down"
                     trendLabel="-2 cette semaine"
@@ -148,10 +139,10 @@ const DashboardPage = () => {
             {/* ── Graphique + Top villes ── */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                 <div className="xl:col-span-2">
-                    <SalesChart />
+                    <SalesChart data={stats?.sales_chart ?? []} />
                 </div>
                 <div>
-                    <TopCities />
+                    <TopCities data={stats?.top_cities ?? []} />
                 </div>
             </div>
 
@@ -165,12 +156,10 @@ const DashboardPage = () => {
                     rounded-3 p-5 flex flex-col gap-4
                     hover:shadow-md transition-shadow duration-200
                 ">
-                    {/* Header */}
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold font-poppins text-neutral-6 dark:text-neutral-6 uppercase tracking-wide">
                             Chiffre d'affaires
                         </span>
-                        {/* Filtres */}
                         <div className="flex items-center gap-1 bg-neutral-3 dark:bg-neutral-3 rounded-full p-0.5">
                             {CA_FILTERS.map(f => (
                                 <button
@@ -190,24 +179,20 @@ const DashboardPage = () => {
                             ))}
                         </div>
                     </div>
-
-                    {/* Valeur + tendance */}
                     <div className="flex items-end justify-between gap-2">
+                        {/* TODO : stats?.revenue_by_period[caFilter] quand l'API l'expose */}
                         <span className="text-h4 font-bold font-poppins text-neutral-8 dark:text-neutral-8 leading-none">
-                            {ca.value}
+                            {formatCFA(stats?.total_revenue)}
                         </span>
-                        <span className={`flex items-center gap-1 text-xs font-medium font-poppins ${ca.trend === 'up' ? 'text-success-1' :
-                            ca.trend === 'down' ? 'text-danger-1' : 'text-neutral-6'
-                            }`}>
-                            {ca.trendLabel}
+                        <span className="flex items-center gap-1 text-xs font-medium font-poppins text-success-1">
+                            <TrendingUp size={13} /> En hausse
                         </span>
                     </div>
                 </div>
 
-                {/* Nouveaux clients */}
                 <StatCard
                     title="Clients inscrits"
-                    value="284"
+                    value={stats?.total_clients?.toLocaleString('fr-FR') ?? '—'}
                     icon={<Users size={18} />}
                     trend="up"
                     trendLabel="+7 cette semaine"
@@ -215,13 +200,13 @@ const DashboardPage = () => {
                 />
             </div>
 
-            {/* ── Tableau commandes + Ruptures ── */}
+            {/* ── Commandes récentes + Ruptures ── */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                 <div className="xl:col-span-2">
-                    <RecentOrders />
+                    <RecentOrders orders={stats?.recent_orders ?? []} />
                 </div>
                 <div>
-                    <LowStockList />
+                    <LowStockList products={stats?.low_stock ?? []} />
                 </div>
             </div>
 

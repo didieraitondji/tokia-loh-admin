@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Package } from 'lucide-react';
-import { useEffect } from 'react';
+import { useProducts } from '../hooks/useProducts';
+import { useCategories } from '../hooks/useCategories';
 import Button from '../components/Button';
 import ProductsTable from '../components/products/ProductsTable';
 import ProductFormModal from '../components/products/ProductFormModal';
@@ -8,53 +9,68 @@ import StatCard from '../components/dashboard/StatCard';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const ProductsPage = () => {
+    const { products, loading, create, update, remove } = useProducts();
+    const { categories } = useCategories();
+
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Produits';
     }, []);
 
-    // Ouvrir modal création
+    // ── Stats calculées depuis les vraies données ─────────────
+    const stats = useMemo(() => {
+        const total = products.length;
+        const active = products.filter(p => p.is_active).length;
+        const lowStock = products.filter(p => p.stock > 0 && p.stock <= 5).length;
+        const outStock = products.filter(p => p.stock === 0).length;
+        return { total, active, lowStock, outStock };
+    }, [products]);
+
+    // ── Handlers ──────────────────────────────────────────────
     const handleCreate = () => {
         setSelectedProduct(null);
         setModalOpen(true);
     };
 
-    // Ouvrir modal édition
     const handleEdit = (product) => {
         setSelectedProduct(product);
         setModalOpen(true);
     };
 
-    // Fermer modal
     const handleClose = () => {
         setModalOpen(false);
         setSelectedProduct(null);
     };
 
-    // Sauvegarde (création ou modification)
-    const handleSave = (formData) => {
-        // TODO : appel API create ou update
-        console.log('Sauvegarde produit :', formData);
+    const handleSave = async (formData) => {
+        if (selectedProduct) {
+            await update(selectedProduct.id, formData);
+        } else {
+            await create(formData);
+        }
+        handleClose();
     };
 
-    // Suppression
     const handleDelete = (product) => {
         setDeleteTarget(product);
     };
 
-    const handleConfirmDelete = () => {
-        // TODO : appel API delete
-        console.log('Suppression produit :', deleteTarget.id);
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleteLoading(true);
+        await remove(deleteTarget.id);
+        setDeleteLoading(false);
         setDeleteTarget(null);
     };
 
     return (
         <div className="flex flex-col gap-6">
 
-            {/* ── En-tête de page ── */}
+            {/* ── En-tête ── */}
             <div className="flex items-center justify-between gap-4">
                 <div>
                     <h1 className="text-h5 font-bold font-poppins text-neutral-8 dark:text-neutral-8">
@@ -64,37 +80,31 @@ const ProductsPage = () => {
                         Gérez votre catalogue de produits
                     </p>
                 </div>
-
-                <Button
-                    variant="primary"
-                    size="normal"
-                    icon={<Plus size={15} />}
-                    iconPosition="left"
-                    onClick={handleCreate}
-                >
-                    <span className='hidden md:inline'>Nouveau produit</span>
+                <Button variant="primary" size="normal" onClick={handleCreate}>
+                    <Plus size={15} />
+                    <span className="hidden md:inline">Nouveau produit</span>
                 </Button>
             </div>
 
-            {/* ── Stats rapides ── */}
+            {/* ── Stats ── */}
             <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
                     title="Total produits"
-                    value="84"
+                    value={loading ? '…' : stats.total.toString()}
                     icon={<Package size={18} />}
                     color="primary"
                 />
                 <StatCard
                     title="Produits actifs"
-                    value="71"
+                    value={loading ? '…' : stats.active.toString()}
                     icon={<Package size={18} />}
                     trend="up"
-                    trendLabel="84%"
+                    trendLabel={loading ? '' : `${stats.total ? Math.round((stats.active / stats.total) * 100) : 0}%`}
                     color="success"
                 />
                 <StatCard
                     title="Stock faible"
-                    value="7"
+                    value={loading ? '…' : stats.lowStock.toString()}
                     icon={<Package size={18} />}
                     trend="down"
                     trendLabel="À réapprovisionner"
@@ -102,7 +112,7 @@ const ProductsPage = () => {
                 />
                 <StatCard
                     title="Ruptures"
-                    value="3"
+                    value={loading ? '…' : stats.outStock.toString()}
                     icon={<Package size={18} />}
                     trend="down"
                     trendLabel="Urgent"
@@ -110,10 +120,14 @@ const ProductsPage = () => {
                 />
             </div>
 
-            {/* ── Tableau des produits ── */}
+            {/* ── Tableau ── */}
             <ProductsTable
+                products={products}
+                loading={loading}
+                categories={categories}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onUpdate={update}
             />
 
             {/* ── Modal formulaire ── */}
@@ -121,14 +135,16 @@ const ProductsPage = () => {
                 open={modalOpen}
                 onClose={handleClose}
                 product={selectedProduct}
+                categories={categories}
                 onSave={handleSave}
             />
 
-            {/* ── Modal de confirmation de suppression ── */}
+            {/* ── Confirmation suppression ── */}
             <DeleteConfirmModal
                 isOpen={!!deleteTarget}
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setDeleteTarget(null)}
+                loading={deleteLoading}
                 title="Supprimer le produit"
                 message={`Voulez-vous vraiment supprimer "${deleteTarget?.name}" ? Cette action est irréversible.`}
             />

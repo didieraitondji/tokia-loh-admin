@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Grid2X2 } from 'lucide-react';
+import { useCategories } from '../hooks/useCategories';
+import { useProducts } from '../hooks/useProducts';
 import Button from '../components/Button';
 import StatCard from '../components/dashboard/StatCard';
 import CategoriesTable from '../components/categories/CategoriesTable';
@@ -7,42 +9,61 @@ import CategoryFormModal from '../components/categories/CategoryFormModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const CategoriesPage = () => {
+    const { categories, loading, create, update, remove } = useCategories();
+    const { products } = useProducts();
+
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Catégories';
     }, []);
 
-    const handleCreate = () => {
-        setSelectedCategory(null);
-        setModalOpen(true);
+    // ── Stats calculées ───────────────────────────────────────
+    const stats = useMemo(() => {
+        const total = categories.length;
+        const active = categories.filter(c => c.is_active).length;
+        const inactive = total - active;
+        return { total, active, inactive };
+    }, [categories]);
+
+    // ── Nombre de produits par catégorie ──────────────────────
+    const productCountByCat = useMemo(() => {
+        const map = {};
+        products.forEach(p => {
+            map[p.category] = (map[p.category] ?? 0) + 1;
+        });
+        return map;
+    }, [products]);
+
+    // ── Handlers ──────────────────────────────────────────────
+    const handleCreate = () => { setSelectedCategory(null); setModalOpen(true); };
+    const handleEdit = (cat) => { setSelectedCategory(cat); setModalOpen(true); };
+    const handleClose = () => { setModalOpen(false); setSelectedCategory(null); };
+
+    const handleSave = async (formData) => {
+        if (selectedCategory) await update(selectedCategory.id, formData);
+        else await create(formData);
+        handleClose();
     };
 
-    const handleEdit = (category) => {
-        setSelectedCategory(category);
-        setModalOpen(true);
-    };
+    const handleDelete = (cat) => setDeleteTarget(cat);
 
-    const handleClose = () => {
-        setModalOpen(false);
-        setSelectedCategory(null);
-    };
-
-    const handleSave = (formData) => {
-        // TODO : appel API create ou update
-        console.log('Sauvegarde catégorie :', formData);
-    };
-
-    const handleDelete = (category) => {
-        setDeleteTarget(category); // ouvre toujours le modal
-    };
-
-    const handleConfirmDelete = () => {
-        console.log('Suppression catégorie :', deleteTarget.id);
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleteLoading(true);
+        await remove(deleteTarget.id);
+        setDeleteLoading(false);
         setDeleteTarget(null);
     };
+
+    // Nombre de produits liés à la catégorie cible
+    const deleteTargetProductCount = deleteTarget
+        ? (productCountByCat[deleteTarget.id] ?? 0)
+        : 0;
+
     return (
         <div className="flex flex-col gap-6">
 
@@ -56,37 +77,31 @@ const CategoriesPage = () => {
                         Gérez les catégories de votre boutique
                     </p>
                 </div>
-
-                <Button
-                    variant="primary"
-                    size="normal"
-                    icon={<Plus size={15} />}
-                    iconPosition="left"
-                    onClick={handleCreate}
-                >
-                    <span className='hidden md:inline'>Nouvelle catégorie</span>
+                <Button variant="primary" size="normal" onClick={handleCreate}>
+                    <Plus size={15} />
+                    <span className="hidden md:inline">Nouvelle catégorie</span>
                 </Button>
             </div>
 
-            {/* ── Stats rapides ── */}
+            {/* ── Stats ── */}
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 <StatCard
                     title="Total catégories"
-                    value="6"
+                    value={loading ? '…' : stats.total.toString()}
                     icon={<Grid2X2 size={18} />}
                     color="primary"
                 />
                 <StatCard
                     title="Catégories actives"
-                    value="5"
+                    value={loading ? '…' : stats.active.toString()}
                     icon={<Grid2X2 size={18} />}
                     trend="up"
-                    trendLabel="83%"
+                    trendLabel={loading ? '' : `${stats.total ? Math.round((stats.active / stats.total) * 100) : 0}%`}
                     color="success"
                 />
                 <StatCard
                     title="Catégories inactives"
-                    value="1"
+                    value={loading ? '…' : stats.inactive.toString()}
                     icon={<Grid2X2 size={18} />}
                     color="warning"
                 />
@@ -101,11 +116,15 @@ const CategoriesPage = () => {
 
             {/* ── Tableau ── */}
             <CategoriesTable
+                categories={categories}
+                loading={loading}
+                productCountByCat={productCountByCat}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onUpdate={update}
             />
 
-            {/* ── Modal ── */}
+            {/* ── Modal formulaire ── */}
             <CategoryFormModal
                 open={modalOpen}
                 onClose={handleClose}
@@ -113,19 +132,17 @@ const CategoriesPage = () => {
                 onSave={handleSave}
             />
 
+            {/* ── Confirmation suppression ── */}
             <DeleteConfirmModal
                 isOpen={!!deleteTarget}
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setDeleteTarget(null)}
-                mode={deleteTarget?.products > 0 ? 'error' : 'confirm'}
-                title={
-                    deleteTarget?.products > 0
-                        ? 'Suppression impossible'
-                        : 'Supprimer la catégorie'
-                }
+                loading={deleteLoading}
+                mode={deleteTargetProductCount > 0 ? 'error' : 'confirm'}
+                title={deleteTargetProductCount > 0 ? 'Suppression impossible' : 'Supprimer la catégorie'}
                 message={
-                    deleteTarget?.products > 0
-                        ? `Impossible de supprimer "${deleteTarget?.name}" : ${deleteTarget?.products} produit(s) sont associés à cette catégorie.`
+                    deleteTargetProductCount > 0
+                        ? `Impossible de supprimer "${deleteTarget?.name}" : ${deleteTargetProductCount} produit(s) sont associés à cette catégorie.`
                         : `Voulez-vous vraiment supprimer "${deleteTarget?.name}" ? Cette action est irréversible.`
                 }
             />

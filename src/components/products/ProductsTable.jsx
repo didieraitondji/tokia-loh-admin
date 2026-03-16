@@ -1,28 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Pencil, Trash2, Star, Eye } from 'lucide-react';
+import { Search, Pencil, Trash2, Star, Eye, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import ProductStatusToggle from './ProductStatusToggle';
 import ProductBadge from './ProductBadge';
 
-// Données mock — à remplacer par l'API
-const MOCK_PRODUCTS = [
-    { id: 1, name: 'Robe Ankara Wax', category: 'Robes', price: 15000, salePrice: 11000, stock: 2, active: true, featured: true },
-    { id: 2, name: 'Sandales tressées', category: 'Chaussures', price: 8000, salePrice: null, stock: 12, active: true, featured: false },
-    { id: 3, name: 'Sac en raphia naturel', category: 'Sacs', price: 12000, salePrice: 9500, stock: 0, active: false, featured: false },
-    { id: 4, name: 'Chemise bazin brodée', category: 'Chemises', price: 18000, salePrice: 14000, stock: 3, active: true, featured: true },
-    { id: 5, name: 'Bracelet perles coco', category: 'Bijoux', price: 3500, salePrice: null, stock: 25, active: true, featured: false },
-    { id: 6, name: 'Collier wax multicolor', category: 'Bijoux', price: 5000, salePrice: 3800, stock: 8, active: true, featured: false },
-    { id: 7, name: 'Sac à dos tissu kente', category: 'Sacs', price: 22000, salePrice: null, stock: 5, active: true, featured: false },
-    { id: 8, name: 'Robe bogolan naturel', category: 'Robes', price: 25000, salePrice: 20000, stock: 1, active: false, featured: false },
-];
-
-const CATEGORIES = ['Toutes', 'Robes', 'Chaussures', 'Sacs', 'Chemises', 'Bijoux', 'Accessoires'];
-
-const formatPrice = (p) => p ? `${p.toLocaleString('fr-FR')} F` : '—';
+const formatPrice = (p) => p ? `${Number(p).toLocaleString('fr-FR')} F` : '—';
 
 const calcDiscount = (price, salePrice) => {
     if (!salePrice) return null;
-    return Math.round(((price - salePrice) / price) * 100);
+    return Math.round(((Number(price) - Number(salePrice)) / Number(price)) * 100);
 };
 
 const getStockBadgeType = (stock) => {
@@ -31,54 +17,71 @@ const getStockBadgeType = (stock) => {
     return null;
 };
 
-const ProductAvatar = ({ name }) => (
-    <div className="w-10 h-10 rounded-md bg-secondary-5 flex items-center justify-center shrink-0">
-        <span className="text-xs font-bold font-poppins text-secondary-1 uppercase">
-            {name.slice(0, 2)}
-        </span>
-    </div>
-);
+const ProductAvatar = ({ name, image }) => {
+    if (image) return (
+        <img src={image} alt={name} className="w-10 h-10 rounded-md object-cover shrink-0" />
+    );
+    return (
+        <div className="w-10 h-10 rounded-md bg-secondary-5 flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold font-poppins text-secondary-1 uppercase">
+                {name?.slice(0, 2) ?? '??'}
+            </span>
+        </div>
+    );
+};
 
-const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) => {
+/*
+  Props :
+  - products   : tableau issu de useProducts()
+  - loading    : boolean
+  - categories : tableau issu de useCategories()
+  - onEdit     : (product) => void
+  - onDelete   : (product) => void
+  - onUpdate   : (id, payload) => Promise  — pour toggle statut/vedette
+*/
+const ProductsTable = ({ products = [], loading = false, categories = [], onEdit, onDelete, onUpdate }) => {
     const navigate = useNavigate();
 
     const [search, setSearch] = useState('');
     const [catFilter, setCatFilter] = useState('Toutes');
     const [stockFilter, setStockFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
-    const [products, setProducts] = useState(MOCK_PRODUCTS);
 
-    const handleToggleStatus = (id) => {
-        setProducts(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
-        onToggleStatus?.(id);
-    };
+    // ── Noms de catégories pour le filtre ─────────────────────
+    const categoryNames = useMemo(() =>
+        ['Toutes', ...categories.map(c => c.name)],
+        [categories]);
 
-    const handleToggleFeatured = (id) => {
-        setProducts(prev => prev.map(p => p.id === id ? { ...p, featured: !p.featured } : p));
-        onToggleFeatured?.(id);
-    };
-
+    // ── Filtrage ──────────────────────────────────────────────
     const filtered = useMemo(() => {
         return products.filter(p => {
-            const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-            const matchCat = catFilter === 'Toutes' || p.category === catFilter;
-            const matchStock = stockFilter === 'all'
-                ? true
-                : stockFilter === 'out' ? p.stock === 0 : p.stock <= 5 && p.stock > 0;
-            const matchStatus = statusFilter === 'all'
-                ? true
-                : statusFilter === 'active' ? p.active : !p.active;
+            const name = p.name ?? '';
+            const catName = categories.find(c => c.id === p.category)?.name ?? p.category ?? '';
+            const matchSearch = name.toLowerCase().includes(search.toLowerCase());
+            const matchCat = catFilter === 'Toutes' || catName === catFilter;
+            const matchStock = stockFilter === 'all' ? true
+                : stockFilter === 'out' ? p.stock === 0
+                    : p.stock <= 5 && p.stock > 0;
+            const matchStatus = statusFilter === 'all' ? true
+                : statusFilter === 'active' ? p.is_active
+                    : !p.is_active;
             return matchSearch && matchCat && matchStock && matchStatus;
         });
-    }, [products, search, catFilter, stockFilter, statusFilter]);
+    }, [products, categories, search, catFilter, stockFilter, statusFilter]);
+
+    // ── Toggles (optimistic) ──────────────────────────────────
+    const handleToggleStatus = (product) => {
+        onUpdate?.(product.id, { is_active: !product.is_active });
+    };
+
+    const handleToggleFeatured = (product) => {
+        onUpdate?.(product.id, { featured: !product.featured });
+    };
 
     return (
-        <div className="
-            bg-neutral-0 dark:bg-neutral-0
-            border border-neutral-4 dark:border-neutral-4
-            rounded-md overflow-hidden
-        ">
-            {/* ── Barre de recherche + filtres ── */}
+        <div className="bg-neutral-0 dark:bg-neutral-0 border border-neutral-4 dark:border-neutral-4 rounded-3 overflow-hidden">
+
+            {/* ── Filtres ── */}
             <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-neutral-4 dark:border-neutral-4">
                 <div className="relative flex-1 min-w-48">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-6 pointer-events-none" />
@@ -87,19 +90,13 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                         placeholder="Rechercher un produit..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="
-                            w-full pl-9 pr-4 py-2 text-xs font-poppins rounded-full
-                            bg-neutral-3 dark:bg-neutral-3 border border-transparent
-                            text-neutral-8 dark:text-neutral-8 placeholder:text-neutral-6
-                            outline-none focus:border-primary-1 focus:bg-neutral-0 dark:focus:bg-neutral-0
-                            focus:ring-2 focus:ring-primary-5 transition-all duration-200
-                        "
+                        className="w-full pl-9 pr-4 py-2 text-xs font-poppins rounded-full bg-neutral-3 dark:bg-neutral-3 border border-transparent text-neutral-8 dark:text-neutral-8 placeholder:text-neutral-6 outline-none focus:border-primary-1 focus:bg-neutral-0 dark:focus:bg-neutral-0 focus:ring-2 focus:ring-primary-5 transition-all duration-200"
                     />
                 </div>
 
                 <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
                     className="px-3 py-2 text-xs font-poppins rounded-full cursor-pointer bg-neutral-3 dark:bg-neutral-3 border border-transparent text-neutral-7 dark:text-neutral-7 outline-none focus:border-primary-1 transition-all duration-200">
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                    {categoryNames.map(c => <option key={c}>{c}</option>)}
                 </select>
 
                 <select value={stockFilter} onChange={e => setStockFilter(e.target.value)}
@@ -134,39 +131,46 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                         </tr>
                     </thead>
                     <tbody>
-                        {filtered.length === 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan={8} className="px-4 py-12 text-center">
+                                    <Loader2 size={20} className="animate-spin text-primary-1 mx-auto" />
+                                </td>
+                            </tr>
+                        ) : filtered.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="px-4 py-10 text-center text-neutral-6 dark:text-neutral-6">
                                     Aucun produit trouvé
                                 </td>
                             </tr>
                         ) : filtered.map(product => {
-                            const discount = calcDiscount(product.price, product.salePrice);
+                            const catName = categories.find(c => c.id === product.category)?.name ?? product.category ?? '—';
+                            const discount = calcDiscount(product.price, product.sale_price);
                             const stockBadge = getStockBadgeType(product.stock);
 
                             return (
-                                <tr key={product.id} className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150">
-
-                                    {/* Produit */}
+                                <tr
+                                    key={product.id}
+                                    onClick={() => navigate(`/products/${product.id}`)}
+                                    className="border-b border-neutral-4 dark:border-neutral-4 last:border-0 hover:bg-neutral-2 dark:hover:bg-neutral-2 transition-colors duration-150 cursor-pointer"
+                                >
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
-                                            <ProductAvatar name={product.name} />
+                                            <ProductAvatar name={product.name} image={product.image} />
                                             <span className="font-medium text-neutral-8 dark:text-neutral-8 max-w-40 truncate">
                                                 {product.name}
                                             </span>
                                         </div>
                                     </td>
 
-                                    {/* Catégorie */}
-                                    <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{product.category}</td>
+                                    <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">{catName}</td>
 
-                                    {/* Prix */}
                                     <td className="px-4 py-3 whitespace-nowrap">
                                         <div className="flex flex-col">
                                             <span className="font-semibold text-neutral-8 dark:text-neutral-8">
-                                                {formatPrice(product.salePrice ?? product.price)}
+                                                {formatPrice(product.sale_price ?? product.price)}
                                             </span>
-                                            {product.salePrice && (
+                                            {product.sale_price && (
                                                 <span className="line-through text-neutral-5 text-[11px]">
                                                     {formatPrice(product.price)}
                                                 </span>
@@ -174,7 +178,6 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                                         </div>
                                     </td>
 
-                                    {/* Réduction */}
                                     <td className="px-4 py-3 whitespace-nowrap">
                                         {discount
                                             ? <span className="text-success-1 font-semibold">-{discount}%</span>
@@ -182,7 +185,6 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                                         }
                                     </td>
 
-                                    {/* Stock */}
                                     <td className="px-4 py-3 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
                                             <span className={`font-semibold ${product.stock === 0 ? 'text-danger-1' : product.stock <= 5 ? 'text-warning-1' : 'text-neutral-8 dark:text-neutral-8'}`}>
@@ -192,23 +194,25 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                                         </div>
                                     </td>
 
-                                    {/* Statut */}
-                                    <td className="px-4 py-3">
-                                        <ProductStatusToggle active={product.active} onChange={() => handleToggleStatus(product.id)} />
+                                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                                        <ProductStatusToggle
+                                            active={product.is_active}
+                                            onChange={() => handleToggleStatus(product)}
+                                        />
                                     </td>
 
-                                    {/* Vedette */}
-                                    <td className="px-4 py-3">
-                                        <button onClick={() => handleToggleFeatured(product.id)} title={product.featured ? 'Retirer des vedettes' : 'Mettre en vedette'} className="cursor-pointer transition-colors duration-200">
+                                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => handleToggleFeatured(product)}
+                                            title={product.featured ? 'Retirer des vedettes' : 'Mettre en vedette'}
+                                            className="cursor-pointer transition-colors duration-200"
+                                        >
                                             <Star size={16} className={product.featured ? 'fill-warning-1 text-warning-1' : 'text-neutral-4'} />
                                         </button>
                                     </td>
 
-                                    {/* ── Actions ── */}
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                         <div className="flex items-center gap-1.5">
-
-                                            {/* Voir le détail → /products/:id */}
                                             <button
                                                 onClick={() => navigate(`/products/${product.id}`)}
                                                 title="Voir le détail"
@@ -216,8 +220,6 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                                             >
                                                 <Eye size={14} />
                                             </button>
-
-                                            {/* Modifier */}
                                             <button
                                                 onClick={() => onEdit?.(product)}
                                                 title="Modifier"
@@ -225,8 +227,6 @@ const ProductsTable = ({ onEdit, onDelete, onToggleStatus, onToggleFeatured }) =
                                             >
                                                 <Pencil size={14} />
                                             </button>
-
-                                            {/* Supprimer */}
                                             <button
                                                 onClick={() => onDelete?.(product)}
                                                 title="Supprimer"

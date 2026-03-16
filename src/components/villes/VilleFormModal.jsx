@@ -6,10 +6,17 @@ import ProductStatusToggle from '../products/ProductStatusToggle';
 
 const EMPTY_FORM = {
     name: '',
-    fee: '',
-    active: true,
+    delivery_price: '',
+    is_active: true,
 };
 
+/*
+  Props :
+  - open    : boolean
+  - onClose : () => void
+  - ville   : object | null  — { id, name, delivery_price, is_active, ... }
+  - onSave  : (payload) => Promise
+*/
 const VilleFormModal = ({ open, onClose, ville = null, onSave }) => {
     const [form, setForm] = useState(EMPTY_FORM);
     const [errors, setErrors] = useState({});
@@ -19,7 +26,11 @@ const VilleFormModal = ({ open, onClose, ville = null, onSave }) => {
 
     useEffect(() => {
         if (open) {
-            setForm(ville ? { ...EMPTY_FORM, ...ville } : EMPTY_FORM);
+            setForm(ville ? {
+                name: ville.name ?? '',
+                delivery_price: ville.delivery_price ?? '',
+                is_active: ville.is_active !== false,
+            } : EMPTY_FORM);
             setErrors({});
         }
     }, [open, ville]);
@@ -40,8 +51,9 @@ const VilleFormModal = ({ open, onClose, ville = null, onSave }) => {
     const validate = () => {
         const e = {};
         if (!form.name.trim()) e.name = 'Nom de la ville requis';
-        if (form.fee === '') e.fee = 'Frais de livraison requis';
-        if (isNaN(form.fee) || Number(form.fee) < 0) e.fee = 'Montant invalide';
+        if (form.delivery_price === '') e.delivery_price = 'Frais de livraison requis';
+        if (isNaN(form.delivery_price) || Number(form.delivery_price) < 0)
+            e.delivery_price = 'Montant invalide';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -50,11 +62,20 @@ const VilleFormModal = ({ open, onClose, ville = null, onSave }) => {
         e.preventDefault();
         if (!validate()) return;
         setLoading(true);
-        // TODO : appel API create ou update
-        await new Promise(r => setTimeout(r, 1000));
-        setLoading(false);
-        onSave?.({ ...form, fee: Number(form.fee) });
-        onClose();
+        try {
+            // Payload aligné sur l'API : { name, delivery_price, is_active }
+            await onSave?.({
+                name: form.name.trim(),
+                delivery_price: Number(form.delivery_price),
+                is_active: form.is_active,
+            });
+            onClose();
+        } catch (err) {
+            // L'erreur remonte au parent (useVilles la gère)
+            console.error('Erreur sauvegarde ville:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -64,12 +85,8 @@ const VilleFormModal = ({ open, onClose, ville = null, onSave }) => {
                 onClick={onClose}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="
-                    bg-neutral-0 dark:bg-neutral-0
-                    rounded-3 shadow-xl
-                    w-full max-w-sm
-                    flex flex-col overflow-hidden
-                ">
+                <div className="bg-neutral-0 dark:bg-neutral-0 rounded-3 shadow-xl w-full max-w-sm flex flex-col overflow-hidden">
+
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-4 dark:border-neutral-4">
                         <h2 className="text-sm font-bold font-poppins text-neutral-8 dark:text-neutral-8">
@@ -91,35 +108,35 @@ const VilleFormModal = ({ open, onClose, ville = null, onSave }) => {
                             name="name"
                             value={form.name}
                             onChange={handleChange}
-                            placeholder="Ex: Abidjan"
+                            placeholder="Ex: Cotonou"
                             error={errors.name}
                             required
                         />
 
                         <InputField
                             label="Frais de livraison (F)"
-                            name="fee"
+                            name="delivery_price"
                             type="number"
-                            value={form.fee}
+                            value={form.delivery_price}
                             onChange={handleChange}
                             placeholder="Ex: 1000"
                             hint="Saisir 0 pour une livraison gratuite"
-                            error={errors.fee}
+                            error={errors.delivery_price}
                             required
                         />
 
                         {/* Aperçu frais */}
-                        {form.fee !== '' && !errors.fee && (
+                        {form.delivery_price !== '' && !errors.delivery_price && (
                             <div className={`
                                 flex items-center gap-2 px-3 py-2 rounded-2 text-xs font-poppins font-medium
-                                ${Number(form.fee) === 0
+                                ${Number(form.delivery_price) === 0
                                     ? 'bg-success-2 text-success-1'
                                     : 'bg-primary-5 text-primary-7'
                                 }
                             `}>
-                                {Number(form.fee) === 0
+                                {Number(form.delivery_price) === 0
                                     ? '✓ Livraison gratuite pour cette ville'
-                                    : `✓ Frais de livraison : ${Number(form.fee).toLocaleString('fr-FR')} F`
+                                    : `✓ Frais de livraison : ${Number(form.delivery_price).toLocaleString('fr-FR')} F`
                                 }
                             </div>
                         )}
@@ -135,8 +152,8 @@ const VilleFormModal = ({ open, onClose, ville = null, onSave }) => {
                                 </p>
                             </div>
                             <ProductStatusToggle
-                                active={form.active}
-                                onChange={val => setForm(prev => ({ ...prev, active: val }))}
+                                active={form.is_active}
+                                onChange={val => setForm(prev => ({ ...prev, is_active: val }))}
                             />
                         </div>
                     </form>

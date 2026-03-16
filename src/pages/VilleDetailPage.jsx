@@ -2,23 +2,22 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
     ArrowLeft, Pencil, ShoppingCart,
-    CheckCircle, Clock, TrendingUp, MapPin
+    CheckCircle, Clock, TrendingUp, MapPin, Loader2
 } from 'lucide-react';
 import Button from '../components/Button';
 import ProductStatusToggle from '../components/products/ProductStatusToggle';
 import StatCard from '../components/dashboard/StatCard';
 import OrdersTable from '../components/orders/OrdersTable';
 import VilleFormModal from '../components/villes/VilleFormModal';
-import { MOCK_VILLES } from '../components/villes/VillesTable';
-import { MOCK_ORDERS } from '../components/orders/OrdersTable';
+import { useVilles } from '../hooks/useVilles';
+import { useOrders } from '../hooks/useOrders';
 
 const formatPrice = (p) => `${Number(p).toLocaleString('fr-FR')} F`;
 
-// Avatar grand format
 const VilleAvatarLarge = ({ name }) => (
     <div className="w-16 h-16 rounded-[14px] bg-secondary-1 flex items-center justify-center shrink-0 shadow-md">
         <span className="text-xl font-bold font-poppins text-white uppercase">
-            {name.slice(0, 2)}
+            {name?.slice(0, 2) ?? '??'}
         </span>
     </div>
 );
@@ -26,42 +25,67 @@ const VilleAvatarLarge = ({ name }) => (
 const VilleDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [ville, setVille] = useState(null);
-    const [orders, setOrders] = useState([]);
     const [modalOpen, setModalOpen] = useState(false);
 
+    // ── Données ville ────────────────────────────────────────
+    const { ville, loading: villeLoading, update } = useVilles({ id });
+
+    // ── Commandes de cette ville ─────────────────────────────
+    // useOrders ne filtre pas par ville côté API — on récupère toutes
+    // les commandes et on filtre localement sur city_name
+    const { orders: allOrders, loading: ordersLoading } = useOrders();
+    const orders = useMemo(() => {
+        if (!ville) return [];
+        return allOrders.filter(o =>
+            (o.client?.city ?? o.city_name ?? '').toLowerCase() === ville.name.toLowerCase()
+        );
+    }, [allOrders, ville]);
+
     useEffect(() => {
-        // TODO : remplacer par appel API GET /villes/:id
-        const found = MOCK_VILLES.find(v => v.id === Number(id));
-        if (!found) { navigate('/villes'); return; }
-        setVille(found);
-        document.title = `Admin Tokia-Loh | ${found.name}`;
+        if (ville) {
+            document.title = `Admin Tokia-Loh | ${ville.name}`;
+        }
+    }, [ville]);
 
-        // TODO : remplacer par appel API GET /orders?city=found.name
-        const cityOrders = MOCK_ORDERS.filter(o => o.client.city === found.name);
-        setOrders(cityOrders);
-    }, [id]);
+    useEffect(() => {
+        if (!villeLoading && !ville) {
+            navigate('/cities');
+        }
+    }, [ville, villeLoading, navigate]);
 
-    // Stats calculées dynamiquement depuis les commandes réelles
+    // ── Stats commandes ──────────────────────────────────────
     const stats = useMemo(() => {
-        if (!ville) return {};
-        const livrees = orders.filter(o => o.status === 'Livrée').length;
-        const enCours = orders.filter(o => ['En attente', 'Confirmée', 'En préparation', 'En livraison'].includes(o.status)).length;
-        const caFrais = orders.filter(o => o.status === 'Livrée').length * ville.fee;
+        if (!ville) return { livrees: 0, enCours: 0, caFrais: 0 };
+        const livrees = orders.filter(o => o.status === 'delivered').length;
+        const enCours = orders.filter(o =>
+            ['pending', 'confirmed', 'preparing', 'shipping'].includes(o.status)
+        ).length;
+        const caFrais = livrees * Number(ville.delivery_price ?? 0);
         return { livrees, enCours, caFrais };
     }, [orders, ville]);
 
+    // ── Handlers ────────────────────────────────────────────
+    const handleToggleStatus = async () => {
+        await update(ville.id, { is_active: !ville.is_active });
+    };
+
+    const handleSave = async (formData) => {
+        await update(ville.id, formData);
+        setModalOpen(false);
+    };
+
+    // ── Loading / not found ──────────────────────────────────
+    if (villeLoading) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <Loader2 size={28} className="animate-spin text-primary-1" />
+            </div>
+        );
+    }
+
     if (!ville) return null;
 
-    const handleToggleStatus = () => {
-        setVille(prev => ({ ...prev, active: !prev.active }));
-        // TODO : appel API PATCH /villes/:id/status
-    };
-
-    const handleSave = (formData) => {
-        setVille(prev => ({ ...prev, ...formData }));
-        // TODO : appel API PATCH /villes/:id
-    };
+    const deliveryPrice = Number(ville.delivery_price ?? 0);
 
     return (
         <div className="flex flex-col gap-6">
@@ -112,13 +136,13 @@ const VilleDetailPage = () => {
                         <h2 className="text-base font-bold font-poppins text-neutral-8 dark:text-neutral-8">
                             {ville.name}
                         </h2>
-                        {ville.fee === 0 ? (
+                        {deliveryPrice === 0 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-success-2 text-success-1 font-semibold text-[11px] font-poppins">
                                 Livraison gratuite
                             </span>
                         ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary-5 text-primary-1 font-semibold text-[11px] font-poppins">
-                                {formatPrice(ville.fee)} / livraison
+                                {formatPrice(deliveryPrice)} / livraison
                             </span>
                         )}
                     </div>
@@ -127,12 +151,14 @@ const VilleDetailPage = () => {
                     <div className="flex items-center gap-5 flex-wrap">
                         <div className="flex items-center gap-1.5 text-xs font-poppins text-neutral-6">
                             <MapPin size={12} className="text-secondary-1" />
-                            Zone de livraison active
+                            Zone de livraison {ville.is_active !== false ? 'active' : 'inactive'}
                         </div>
                         <div className="flex items-center gap-1.5 text-xs font-poppins text-neutral-6">
                             <ShoppingCart size={12} className="text-primary-1" />
-                            <span className="font-semibold text-neutral-8 dark:text-neutral-8">{ville.orders}</span>
-                            &nbsp;commande{ville.orders > 1 ? 's' : ''} au total
+                            <span className="font-semibold text-neutral-8 dark:text-neutral-8">
+                                {orders.length}
+                            </span>
+                            &nbsp;commande{orders.length > 1 ? 's' : ''} au total
                         </div>
                     </div>
                 </div>
@@ -141,7 +167,7 @@ const VilleDetailPage = () => {
                 <div className="flex flex-col items-center gap-1.5 shrink-0">
                     <span className="text-[11px] font-poppins text-neutral-5">Livraison active</span>
                     <ProductStatusToggle
-                        active={ville.active}
+                        active={ville.is_active !== false}
                         onChange={handleToggleStatus}
                     />
                 </div>
@@ -151,13 +177,13 @@ const VilleDetailPage = () => {
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
                     title="Total commandes"
-                    value={String(orders.length)}
+                    value={ordersLoading ? '…' : String(orders.length)}
                     icon={<ShoppingCart size={18} />}
                     color="primary"
                 />
                 <StatCard
                     title="Livrées"
-                    value={String(stats.livrees)}
+                    value={ordersLoading ? '…' : String(stats.livrees)}
                     icon={<CheckCircle size={18} />}
                     color="success"
                     trend={stats.livrees > 0 ? 'up' : 'neutral'}
@@ -165,19 +191,19 @@ const VilleDetailPage = () => {
                 />
                 <StatCard
                     title="En cours"
-                    value={String(stats.enCours)}
+                    value={ordersLoading ? '…' : String(stats.enCours)}
                     icon={<Clock size={18} />}
                     color="warning"
                 />
                 <StatCard
                     title="CA frais livraison"
-                    value={ville.fee === 0 ? 'Gratuit' : formatPrice(stats.caFrais)}
+                    value={deliveryPrice === 0 ? 'Gratuit' : (ordersLoading ? '…' : formatPrice(stats.caFrais))}
                     icon={<TrendingUp size={18} />}
                     color="secondary"
                 />
             </div>
 
-            {/* ── Commandes de la ville avec OrdersTable ── */}
+            {/* ── Commandes de la ville ── */}
             <div className="flex flex-col gap-3">
                 <div>
                     <p className="text-sm font-bold font-poppins text-neutral-8 dark:text-neutral-8">
@@ -188,7 +214,7 @@ const VilleDetailPage = () => {
                     </p>
                 </div>
 
-                {orders.length === 0 ? (
+                {!ordersLoading && orders.length === 0 ? (
                     <div className="
                         bg-neutral-0 dark:bg-neutral-0
                         border border-neutral-4 dark:border-neutral-4
@@ -198,8 +224,7 @@ const VilleDetailPage = () => {
                         <p className="text-xs font-poppins">Aucune commande pour {ville.name}</p>
                     </div>
                 ) : (
-                    /* OrdersTable réutilisé — onglets statut + recherche + navigation /orders/:id inclus */
-                    <OrdersTable orders={orders} />
+                    <OrdersTable orders={orders} loading={ordersLoading} />
                 )}
             </div>
 

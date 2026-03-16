@@ -1,63 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, MapPin, CheckCircle, XCircle, Truck } from 'lucide-react';
+import { useVilles } from '../hooks/useVilles';
 import Button from '../components/Button';
 import StatCard from '../components/dashboard/StatCard';
-import VillesTable, { MOCK_VILLES } from '../components/villes/VillesTable';
+import VillesTable from '../components/villes/VillesTable';
 import VilleFormModal from '../components/villes/VilleFormModal';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const VillesPage = () => {
-    const [villes, setVilles] = useState(MOCK_VILLES);
+    const { villes, loading, error, create, update, remove } = useVilles();
+
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedVille, setSelectedVille] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Villes';
     }, []);
 
-    const handleCreate = () => {
-        setSelectedVille(null);
-        setModalOpen(true);
-    };
+    // ── Stats ────────────────────────────────────────────────
+    const stats = useMemo(() => {
+        const total = villes.length;
+        const actives = villes.filter(v => v.is_active !== false).length;
+        const inactives = total - actives;
+        const withFee = villes.filter(v => Number(v.delivery_price) > 0);
+        const avgFee = withFee.length
+            ? Math.round(withFee.reduce((acc, v) => acc + Number(v.delivery_price), 0) / withFee.length)
+            : 0;
+        return { total, actives, inactives, avgFee };
+    }, [villes]);
 
-    const handleEdit = (ville) => {
-        setSelectedVille(ville);
-        setModalOpen(true);
-    };
+    // ── Handlers ────────────────────────────────────────────
+    const handleCreate = () => { setSelectedVille(null); setModalOpen(true); };
+    const handleEdit = (ville) => { setSelectedVille(ville); setModalOpen(true); };
+    const handleClose = () => { setModalOpen(false); setSelectedVille(null); };
 
-    const handleClose = () => {
-        setModalOpen(false);
-        setSelectedVille(null);
-    };
-
-    const handleSave = (formData) => {
+    const handleSave = async (formData) => {
         if (selectedVille) {
-            // Modification
-            setVilles(prev => prev.map(v => v.id === selectedVille.id ? { ...v, ...formData } : v));
+            await update(selectedVille.id, formData);
         } else {
-            // Création
-            const newVille = { ...formData, id: Date.now(), orders: 0 };
-            setVilles(prev => [...prev, newVille]);
+            await create(formData);
         }
-        // TODO : appel API create ou update
+        handleClose();
+    };
+
+    const handleToggle = async (ville) => {
+        await update(ville.id, { is_active: !ville.is_active });
     };
 
     const handleDelete = (ville) => {
-        if (ville.orders > 0) {
-            alert(`Impossible de supprimer "${ville.name}" : ${ville.orders} commande(s) sont associées à cette ville.`);
-            return;
-        }
-        if (!window.confirm(`Supprimer la ville "${ville.name}" ?`)) return;
-        setVilles(prev => prev.filter(v => v.id !== ville.id));
-        // TODO : appel API delete
+        setDeleteTarget(ville);
     };
 
-    // Stats
-    const total = villes.length;
-    const actives = villes.filter(v => v.active).length;
-    const inactives = villes.filter(v => !v.active).length;
-    const avgFee = villes.length
-        ? Math.round(villes.filter(v => v.fee > 0).reduce((acc, v) => acc + v.fee, 0) / villes.filter(v => v.fee > 0).length)
-        : 0;
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleteLoading(true);
+        try {
+            await remove(deleteTarget.id);
+        } finally {
+            setDeleteLoading(false);
+            setDeleteTarget(null);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-6">
@@ -79,36 +84,42 @@ const VillesPage = () => {
                     iconPosition="left"
                     onClick={handleCreate}
                 >
-                    <span className="hidden md:inline">
-                        Nouvelle ville</span>
+                    <span className="hidden md:inline">Nouvelle ville</span>
                 </Button>
             </div>
+
+            {/* ── Erreur API ── */}
+            {error && (
+                <div className="bg-danger-2 border border-danger-1 rounded-2 px-4 py-3 text-xs font-poppins text-danger-1">
+                    ⚠️ {error}
+                </div>
+            )}
 
             {/* ── Stats ── */}
             <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
                     title="Total villes"
-                    value={String(total)}
+                    value={loading ? '…' : String(stats.total)}
                     icon={<MapPin size={18} />}
                     color="primary"
                 />
                 <StatCard
                     title="Villes actives"
-                    value={String(actives)}
+                    value={loading ? '…' : String(stats.actives)}
                     icon={<CheckCircle size={18} />}
                     trend="up"
-                    trendLabel={`${Math.round((actives / total) * 100)}%`}
+                    trendLabel={stats.total ? `${Math.round((stats.actives / stats.total) * 100)}%` : '0%'}
                     color="success"
                 />
                 <StatCard
                     title="Villes inactives"
-                    value={String(inactives)}
+                    value={loading ? '…' : String(stats.inactives)}
                     icon={<XCircle size={18} />}
                     color="warning"
                 />
                 <StatCard
                     title="Frais moyen"
-                    value={`${avgFee.toLocaleString('fr-FR')} F`}
+                    value={loading ? '…' : `${stats.avgFee.toLocaleString('fr-FR')} F`}
                     icon={<Truck size={18} />}
                     color="secondary"
                 />
@@ -124,17 +135,28 @@ const VillesPage = () => {
             {/* ── Tableau ── */}
             <VillesTable
                 villes={villes}
-                setVilles={setVilles}
+                loading={loading}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onToggle={handleToggle}
             />
 
-            {/* ── Modal ── */}
+            {/* ── Modal formulaire ── */}
             <VilleFormModal
                 open={modalOpen}
                 onClose={handleClose}
                 ville={selectedVille}
                 onSave={handleSave}
+            />
+
+            {/* ── Confirmation suppression ── */}
+            <DeleteConfirmModal
+                isOpen={!!deleteTarget}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setDeleteTarget(null)}
+                loading={deleteLoading}
+                title="Supprimer la ville"
+                message={`Voulez-vous vraiment supprimer "${deleteTarget?.name}" ? Cette action est irréversible.`}
             />
         </div>
     );
