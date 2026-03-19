@@ -1,218 +1,138 @@
 import { useState, useEffect, useCallback } from "react";
 import { dashboardAPI } from "../api/dashboard.api";
 
-const USE_MOCK = true; // 🔧 Passer à false quand l'API est prête
-
-// ── Mock orders ───────────────────────────────────────────────
-const MOCK_ORDERS = [
-  {
-    id: "ord-1042",
-    date: "2025-06-23T09:12:00Z",
-    client: {
-      id: "client-001",
-      firstName: "Aminata",
-      lastName: "Koné",
-      phone: "+225 07 00 11 22",
-      city: "Abidjan",
-      address: "Cocody, Rue des Jardins",
-      latitude: 5.36,
-      longitude: -4.0083,
-    },
-    items: [
-      { name: "Robe Ankara Wax", quantity: 1, unitPrice: 15000 },
-      { name: "Bracelet perles coco", quantity: 2, unitPrice: 3500 },
-    ],
-    note: "Merci de livrer après 17h svp.",
-    delivery_fee: 1000,
-    status: "pending",
-  },
-  {
-    id: "ord-1041",
-    date: "2025-06-23T08:47:00Z",
-    client: {
-      id: "client-002",
-      firstName: "Kouadio",
-      lastName: "Hervé",
-      phone: "+225 05 44 55 66",
-      city: "Bouaké",
-      address: "Quartier Commerce",
-      latitude: 7.6881,
-      longitude: -5.0319,
-    },
-    items: [{ name: "Sandales tressées", quantity: 1, unitPrice: 8000 }],
-    note: "",
-    delivery_fee: 2000,
-    status: "shipping",
-  },
-  {
-    id: "ord-1040",
-    date: "2025-06-22T17:30:00Z",
-    client: {
-      id: "client-003",
-      firstName: "Fatou",
-      lastName: "Diallo",
-      phone: "+225 01 22 33 44",
-      city: "Abidjan",
-      address: "Marcory, Rue 12",
-      latitude: 5.3111,
-      longitude: -3.9969,
-    },
-    items: [
-      { name: "Chemise bazin brodée", quantity: 1, unitPrice: 18000 },
-      { name: "Sac en raphia", quantity: 1, unitPrice: 12000 },
-    ],
-    note: "Laisser chez le gardien si absent.",
-    delivery_fee: 0,
-    status: "delivered",
-  },
-  {
-    id: "ord-1039",
-    date: "2025-06-22T14:10:00Z",
-    client: {
-      id: "client-004",
-      firstName: "Jean-Pierre",
-      lastName: "Aka",
-      phone: "+225 07 88 99 00",
-      city: "Yamoussoukro",
-      address: "Avenue Houphouët-Boigny",
-      latitude: 6.8276,
-      longitude: -5.2893,
-    },
-    items: [{ name: "Collier wax multicolor", quantity: 1, unitPrice: 5000 }],
-    note: "",
-    delivery_fee: 1500,
-    status: "confirmed",
-  },
-  {
-    id: "ord-1038",
-    date: "2025-06-22T11:05:00Z",
-    client: {
-      id: "client-005",
-      firstName: "Marie",
-      lastName: "Bamba",
-      phone: "+225 05 66 77 88",
-      city: "San-Pédro",
-      address: "Centre-ville",
-      latitude: 4.7485,
-      longitude: -6.6363,
-    },
-    items: [{ name: "Robe bogolan naturel", quantity: 1, unitPrice: 25000 }],
-    note: "Appeler avant de venir.",
-    delivery_fee: 2500,
-    status: "preparing",
-  },
-  {
-    id: "ord-1037",
-    date: "2025-06-21T16:22:00Z",
-    client: {
-      id: "client-006",
-      firstName: "Oumar",
-      lastName: "Traoré",
-      phone: "+225 01 33 44 55",
-      city: "Korhogo",
-      address: "Quartier Nord",
-      latitude: 9.458,
-      longitude: -5.6294,
-    },
-    items: [{ name: "Bracelet perles coco", quantity: 2, unitPrice: 3500 }],
-    note: "",
-    delivery_fee: 2000,
-    status: "cancelled",
-  },
-];
+const USE_MOCK = false;
 
 /**
- * Normalise une commande reçue de l'API vers le format interne.
+ * Normalise une commande depuis /shop/dashboard/orders/
  *
- * Champs attendus de l'API :
- *   id, created_at, status, delivery_fee, note
- *   items      : [{ name, quantity, unit_price }]
- *   client     : { id, first_name, last_name, phone, city, address, latitude, longitude }
+ * Structure API v3 :
+ * {
+ *   id                   : UUID
+ *   client               : UUID  (pas d'objet client complet)
+ *   status               : "in_progress" | "delivered" | "canceled"
+ *   delivery_address     : string | null  (lien Google Maps)
+ *   specific_information : string | null  (note du client)
+ *   total                : string  ("420500.00")
+ *   items: [{
+ *     product  : string (nom)
+ *     image    : string (URL)
+ *     quantity : number
+ *     price    : number
+ *   }]
+ * }
  */
 const normalizeOrder = (raw) => ({
   id: raw.id,
-  date: raw.created_at ?? raw.date,
+  date: raw.created_at ?? null,
   status: raw.status,
+  total: raw.total ?? "0.00",
   delivery_fee: raw.delivery_fee ?? 0,
-  note: raw.note ?? "",
+  note: raw.specific_information ?? "",
+  delivery_address: raw.delivery_address ?? null,
+
+  // Items — format unifié pour OrderDetailPage
   items: (raw.items ?? []).map((i) => ({
-    name: i.name ?? i.product_name,
+    name: i.product,
+    image: i.image ?? null,
     quantity: i.quantity,
-    unitPrice: i.unit_price ?? i.unitPrice,
+    unitPrice: i.price,
   })),
+
+  // Client — seul l'UUID est disponible dans cette route
+  // Les infos complètes viennent de /dashboard-orders/ (client_name, city)
   client: {
-    id: raw.client?.id,
-    firstName: raw.client?.first_name ?? raw.client?.firstName,
-    lastName: raw.client?.last_name ?? raw.client?.lastName,
-    phone: raw.client?.phone,
-    city: raw.client?.city,
-    address: raw.client?.address,
-    latitude: raw.client?.latitude,
-    longitude: raw.client?.longitude,
+    id: raw.client ?? null,
+    fullName: raw.client_name ?? "",
+    city: raw.client_city ?? "",
+    phone: raw.client_phone ?? "",
+    address: raw.delivery_address ?? "",
+    // Coordonnées extraites du lien Google Maps si disponible
+    latitude: extractLat(raw.delivery_address),
+    longitude: extractLng(raw.delivery_address),
   },
 });
 
 /**
- * useOrders — gère la liste et le détail des commandes.
+ * Extrait la latitude depuis un lien Google Maps
+ * ex: https://www.google.com/maps/search/?api=1&query=6.4367794,2.3395008
+ */
+const extractLat = (url) => {
+  if (!url) return null;
+  const match = url.match(/query=([-\d.]+),([-\d.]+)/);
+  return match ? parseFloat(match[1]) : null;
+};
+
+const extractLng = (url) => {
+  if (!url) return null;
+  const match = url.match(/query=([-\d.]+),([-\d.]+)/);
+  return match ? parseFloat(match[2]) : null;
+};
+
+/**
+ * useOrders
+ *
+ * Utilise deux endpoints complémentaires :
+ *   /shop/dashboard-orders/   → stats (total, in_progress, delivered, canceled)
+ *   /shop/dashboard/orders/   → liste complète avec items et total
  *
  * Usage liste :
- *   const { orders, loading, error, updateStatus } = useOrders();
- *
- * Usage avec filtres :
- *   const { orders } = useOrders({ status: 'pending', search: 'Koné' });
- *
- * Usage détail :
- *   const { order, loading } = useOrders({ id: 'ord-1042' });
+ *   const { orders, stats, loading, updateStatus } = useOrders();
  *
  * Usage historique client :
- *   const { orders } = useOrders({ clientId: 'uuid-xxx' });
+ *   const { orders, loading } = useOrders({ clientId: 'uuid' });
  */
 export const useOrders = (options = {}) => {
-  const {
-    id = null,
-    clientId = null,
-    status,
-    search,
-    ordering,
-    page,
-  } = options;
+  const { clientId = null } = options;
 
   const [orders, setOrders] = useState([]);
-  const [order, setOrder] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ── Fetch liste ───────────────────────────────────────────
-  const fetchAll = useCallback(async (params = {}) => {
+  // ── Fusion des deux endpoints ─────────────────────────────
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      if (USE_MOCK) {
-        await new Promise((r) => setTimeout(r, 400));
-        let result = [...MOCK_ORDERS];
-        if (params.status)
-          result = result.filter((o) => o.status === params.status);
-        if (params.search) {
-          const q = params.search.toLowerCase();
-          result = result.filter(
-            (o) =>
-              `${o.client.firstName} ${o.client.lastName}`
-                .toLowerCase()
-                .includes(q) || o.id.includes(q),
-          );
-        }
-        setOrders(result);
-      } else {
-        const { data } = await dashboardAPI.listOrders({
-          status: params.status,
-          search: params.search,
-          ordering: params.ordering ?? "-created_at",
-          page: params.page,
-        });
-        // Pagination Django REST : { results: [...], count, next, previous }
-        const list = Array.isArray(data) ? data : (data.results ?? []);
-        setOrders(list.map(normalizeOrder));
-      }
+      // Appels parallèles pour les performances
+      const [statsRes, ordersRes] = await Promise.all([
+        dashboardAPI.listOrdersStats(), // /shop/dashboard-orders/
+        dashboardAPI.listOrders(), // /shop/dashboard/orders/
+      ]);
+
+      // Stats depuis /dashboard-orders/
+      const statsData = statsRes.data;
+      setStats({
+        total: statsData.total_orders ?? 0,
+        in_progress: statsData.in_progress_orders ?? 0,
+        delivered: statsData.delivered_orders ?? 0,
+        canceled: statsData.canceled_orders ?? 0,
+      });
+
+      // Liste complète depuis /dashboard/orders/
+      const ordersData = ordersRes.data;
+      const list = Array.isArray(ordersData)
+        ? ordersData
+        : (ordersData.results ?? []);
+
+      // Enrichit chaque commande avec client_name et city depuis /dashboard-orders/
+      const summaryMap = {};
+      (statsData.orders ?? []).forEach((o) => {
+        summaryMap[o.id] = o;
+      });
+
+      setOrders(
+        list.map((order) => {
+          const summary = summaryMap[order.id] ?? {};
+          return normalizeOrder({
+            ...order,
+            client_name: summary.client_name ?? "",
+            client_city: summary.client_city ?? "",
+            created_at: summary.created_at ?? order.created_at,
+          });
+        }),
+      );
     } catch (err) {
       setError(err.message ?? "Erreur lors du chargement des commandes");
     } finally {
@@ -220,98 +140,49 @@ export const useOrders = (options = {}) => {
     }
   }, []);
 
-  // ── Fetch détail par id ───────────────────────────────────
-  const fetchOne = useCallback(async (orderId) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (USE_MOCK) {
-        await new Promise((r) => setTimeout(r, 400));
-        setOrder(MOCK_ORDERS.find((o) => o.id === orderId) ?? null);
-      } else {
-        // Pas d'endpoint GET /orders/:id en v2 — on charge toute la liste
-        // et on filtre. TODO : simplifier si l'endpoint est ajouté en v3
-        const { data } = await dashboardAPI.listOrders();
-        const list = Array.isArray(data) ? data : (data.results ?? []);
-        const found = list.find((o) => o.id === orderId);
-        setOrder(found ? normalizeOrder(found) : null);
-      }
-    } catch (err) {
-      setError(err.message ?? "Erreur lors du chargement de la commande");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // ── Fetch historique d'un client ──────────────────────────
+  // ── Historique d'un client ────────────────────────────────
   const fetchClientHistory = useCallback(async (cId) => {
     setLoading(true);
     setError(null);
     try {
-      if (USE_MOCK) {
-        await new Promise((r) => setTimeout(r, 400));
-        setOrders(MOCK_ORDERS.filter((o) => o.client.id === cId));
-      } else {
-        const { data } = await dashboardAPI.getClientOrderHistory(cId);
-        const list = Array.isArray(data) ? data : (data.results ?? []);
-        setOrders(list.map(normalizeOrder));
-      }
+      const { data } = await dashboardAPI.getClientOrderHistory(cId);
+      const list = Array.isArray(data)
+        ? data
+        : (data.orders ?? data.results ?? []);
+      setOrders(list.map(normalizeOrder));
     } catch (err) {
-      setError(err.message ?? "Erreur chargement historique client");
+      setError(err.message ?? "Erreur historique client");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // ── Déclenchement auto ────────────────────────────────────
   useEffect(() => {
-    if (id) fetchOne(id);
-    else if (clientId) fetchClientHistory(clientId);
-    else fetchAll({ status, search, ordering, page });
-  }, [
-    id,
-    clientId,
-    status,
-    search,
-    ordering,
-    page,
-    fetchAll,
-    fetchOne,
-    fetchClientHistory,
-  ]);
+    if (clientId) fetchClientHistory(clientId);
+    else fetchAll();
+  }, [clientId, fetchAll, fetchClientHistory]);
 
   // ── Mise à jour statut (optimiste + rollback) ─────────────
   const updateStatus = async (orderId, newStatus) => {
-    // Mise à jour locale immédiate
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
     );
-    setOrder((prev) =>
-      prev?.id === orderId ? { ...prev, status: newStatus } : prev,
-    );
-
-    if (!USE_MOCK) {
-      try {
-        await dashboardAPI.updateOrderStatus(orderId, newStatus);
-      } catch (err) {
-        // Rollback en cas d'erreur API
-        setError(err.message ?? "Erreur mise à jour statut");
-        fetchAll({ status, search, ordering, page });
-      }
+    try {
+      // ⚠️  v3 : PUT, statut "canceled" (un seul l)
+      await dashboardAPI.updateOrderStatus(orderId, newStatus);
+      fetchAll(); // Recharge pour stats à jour
+    } catch (err) {
+      setError(err.message ?? "Erreur mise à jour statut");
+      fetchAll(); // Rollback
     }
   };
 
   return {
     orders,
-    order,
+    stats,
     loading,
     error,
     updateStatus,
-    fetchClientHistory,
-    refetch: id
-      ? () => fetchOne(id)
-      : clientId
-        ? () => fetchClientHistory(clientId)
-        : () => fetchAll({ status, search, ordering, page }),
+    refetch: clientId ? () => fetchClientHistory(clientId) : fetchAll,
   };
 };

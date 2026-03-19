@@ -1,36 +1,67 @@
 import api from "./client";
 
 /**
- * DashboardAPI — statistiques et gestion des commandes.
+ * DashboardAPI — v3
  *
- * GET   /shop/dashboard/                          ?period&start_date&end_date
- * GET   /shop/dashboard/orders/                   ?status&search&ordering&page  ← nouveau en v2
- * PATCH /shop/dashboard/orders/:id/status/        ← nouveau en v2
- * GET   /shop/dashboard/orders/:id/invoice/       ← nouveau en v2
- * GET   /shop/dashboard/orders/client/:id/history/ ← nouveau en v2
+ * Les stats sont réparties sur plusieurs endpoints dédiés :
+ *
+ * GET /shop/dashboard-rapport/      ← stats globales (CA, commandes, top cities...)
+ * GET /shop/dashboard-product/      ← stats produits
+ * GET /shop/dashboard-categories/   ← stats catégories
+ * GET /shop/dashboard-orders/       ← liste commandes backoffice
+ * GET /shop/dashboard-clients       ← stats clients
+ * GET /shop/dashboard-cities/       ← stats villes
+ * GET /shop/dashboard-pubs/         ← stats publicités
+ * GET /shop/dashboard-pubs-list/    ← liste publicités backoffice
+ * GET /shop/dashboard-notifications/← notifications backoffice
+ *
+ * GET  /shop/dashboard?period=today|this_week|this_month
+ * GET  /shop/dashboard?start_date=DD-MM-YYYY&end_date=DD-MM-YYYY
+ *
+ * GET  /shop/dashboard/orders/client/:id/history/
+ * PUT  /shop/dashboard/orders/:id/status/   body: { status: "canceled" }
+ * GET  /shop/dashboard/orders/:id/invoice/
+ * GET  /shop/generate-report-pdf
  */
 class DashboardAPI {
   /**
-   * Statistiques globales du dashboard.
-   * @param {{
-   *   period?     : 'today' | 'week' | 'month' | 'year',
-   *   start_date? : string,  // format: 'DD-MM-YYYY'
-   *   end_date?   : string,  // format: 'DD-MM-YYYY'
-   * }} params
+   * Stats globales du rapport.
+   * Retourne : { turnover, total_orders, products_sold, average_basket,
+   *              sales_by_category, weekly_revenue, monthly_sales_by_week, mains_top_cities }
    */
   getStats(params = {}) {
-    return api.get("/shop/dashboard/", { params });
+    // params : { period?, start_date?, end_date? }
+    if (Object.keys(params).length > 0) {
+      return api.get("/shop/dashboard", { params });
+    }
+    return api.get("/shop/dashboard-rapport/");
+  }
+
+  /** Stats produits. */
+  getProductStats() {
+    return api.get("/shop/dashboard-product/");
+  }
+
+  /** Stats catégories. */
+  getCategoryStats() {
+    return api.get("/shop/dashboard-categories/");
   }
 
   /**
-   * Liste des commandes avec filtres et pagination.
-   * ⚠️  Nouveau en v2
-   * @param {{
-   *   status?   : string,  // ex: 'pending', 'delivered', 'in_progress'
-   *   search?   : string,
-   *   ordering? : string,  // ex: '-created_at'
-   *   page?     : number,
-   * }} params
+   * Stats commandes + liste résumée.
+   * /shop/dashboard-orders/
+   * Retourne : { success, total_orders, in_progress_orders, delivered_orders,
+   *              canceled_orders, orders: [{ id, client_name, client_city, status, created_at }] }
+   */
+  listOrdersStats() {
+    return api.get("/shop/dashboard-orders/");
+  }
+
+  /**
+   * Liste complète des commandes avec items et total.
+   * /shop/dashboard/orders/
+   * Retourne : { count, total_pages, results: [{ id, client, status, total, items, ... }] }
+   * @param {{ status?, search?, ordering?, page? }} params
    */
   listOrders(params = {}) {
     return api.get("/shop/dashboard/orders/", { params });
@@ -38,30 +69,52 @@ class DashboardAPI {
 
   /**
    * Met à jour le statut d'une commande.
-   * ⚠️  Nouveau en v2
-   * @param {string} id     — UUID de la commande
-   * @param {string} status — ex: 'delivered', 'cancelled'
+   * ⚠️  v3 : méthode PUT (était PATCH en v2)
+   * ⚠️  v3 : statut "canceled" (un seul l)
+   * @param {string} id
+   * @param {string} status — ex: 'canceled', 'delivered', 'in_progress'
    */
   updateOrderStatus(id, status) {
-    return api.patch(`/shop/dashboard/orders/${id}/status/`, { status });
+    return api.put(`/shop/dashboard/orders/${id}/status/`, { status });
   }
 
-  /**
-   * Récupère la facture d'une commande (données ou PDF).
-   * ⚠️  Nouveau en v2
-   * @param {string} id — UUID
-   */
+  /** Facture d'une commande. */
   getOrderInvoice(id) {
     return api.get(`/shop/dashboard/orders/${id}/invoice/`);
   }
 
-  /**
-   * Historique des commandes d'un client.
-   * ⚠️  Nouveau en v2
-   * @param {string} clientId — UUID du client
-   */
+  /** Historique des commandes d'un client. */
   getClientOrderHistory(clientId) {
     return api.get(`/shop/dashboard/orders/client/${clientId}/history/`);
+  }
+
+  /** Stats clients. */
+  getClientStats() {
+    return api.get("/shop/dashboard-clients");
+  }
+
+  /** Stats villes. */
+  getCityStats() {
+    return api.get("/shop/dashboard-cities/");
+  }
+
+  /** Stats & liste publicités. */
+  getPubStats() {
+    return api.get("/shop/dashboard-pubs/");
+  }
+
+  getPubList() {
+    return api.get("/shop/dashboard-pubs-list/");
+  }
+
+  /** Notifications backoffice. */
+  getNotifications() {
+    return api.get("/shop/dashboard-notifications/");
+  }
+
+  /** Rapport PDF. */
+  generateReportPdf() {
+    return api.get("/shop/generate-report-pdf", { responseType: "blob" });
   }
 }
 

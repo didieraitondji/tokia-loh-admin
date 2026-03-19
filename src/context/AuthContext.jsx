@@ -1,45 +1,39 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { authAPI } from '../api/auth.api';
-import { MOCK_LOGIN_RESPONSE } from '../mockData';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
 
-    // Recharge depuis localStorage si déjà connecté
     const [admin, setAdmin] = useState(() => {
         try {
             const stored = localStorage.getItem('admin');
             return stored ? JSON.parse(stored) : null;
-        } catch {
-            return null;
-        }
+        } catch { return null; }
     });
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     // ── Login ─────────────────────────────────────────────────
-    const USE_MOCK = false; // à Passer à false quand l'API est prête
-
     const login = useCallback(async (email, password) => {
         setLoading(true);
         setError(null);
         try {
-            let token, adminData;
+            const { data } = await authAPI.login(email, password);
 
-            if (USE_MOCK) {
-                await new Promise(r => setTimeout(r, 800));
-                token = MOCK_LOGIN_RESPONSE.token;
-                adminData = MOCK_LOGIN_RESPONSE.admin;
-            } else {
-                const { data } = await authAPI.login(email, password);
-                token = data.token ?? data.access ?? data.key;
-                adminData = data.admin ?? data.user ?? data;
-            }
+            // ⚠️  v3 : { success, access, refresh, exp, user: { id, email } }
+            if (!data.success) throw new Error(data.message ?? 'Identifiants incorrects');
+
+            const token = data.access;   // JWT access token
+            const adminData = data.user;     // { id, email }
 
             localStorage.setItem('token', token);
             localStorage.setItem('admin', JSON.stringify(adminData));
+
+            // Stocker aussi le refresh token pour renouvellement futur
+            if (data.refresh) localStorage.setItem('refresh', data.refresh);
+
             setAdmin(adminData);
             return { success: true };
         } catch (err) {
@@ -54,21 +48,19 @@ export const AuthProvider = ({ children }) => {
     // ── Logout ────────────────────────────────────────────────
     const logout = useCallback(() => {
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh');
         localStorage.removeItem('admin');
         setAdmin(null);
         setError(null);
-        // La redirection est gérée par le router (ProtectedRoute)
     }, []);
 
     // ── Changer mot de passe ──────────────────────────────────
     const changePassword = useCallback(async (oldPassword, newPassword, confirmNewPassword) => {
         if (!admin?.email) throw new Error('Admin non connecté');
         const { data } = await authAPI.changePassword(
-            admin.email,
-            oldPassword,
-            newPassword,
-            confirmNewPassword
+            admin.email, oldPassword, newPassword, confirmNewPassword
         );
+        if (data.success === false) throw new Error(data.message ?? 'Erreur');
         return data;
     }, [admin]);
 
@@ -78,9 +70,11 @@ export const AuthProvider = ({ children }) => {
         return data;
     }, []);
 
-    // ── Réinitialiser mot de passe ────────────────────────────
+    // ── Réinitialiser mot de passe ─────────────────────────────
+    // ⚠️  v3 : paramètre "otp" (était "code" en v2)
     const resetPassword = useCallback(async (email, otp, newPassword, confirmNewPassword) => {
         const { data } = await authAPI.resetPassword(email, otp, newPassword, confirmNewPassword);
+        if (data.success === false) throw new Error(data.message ?? 'Code invalide');
         return data;
     }, []);
 

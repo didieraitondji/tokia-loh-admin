@@ -35,7 +35,7 @@ const InputField = ({
         ${isPassword ? 'pr-10' : ''}
     `;
 
-    /* ── CHECKBOX ─────────────────────────────────────────── */
+
     if (type === 'checkbox') {
         return (
             <div className={`w-full my-2 select-none ${className}`}>
@@ -48,6 +48,7 @@ const InputField = ({
                         onChange={onChange}
                         required={required}
                         disabled={disabled}
+                        autoComplete='off'
                         className="w-4 h-4 rounded accent-primary-1 cursor-pointer"
                     />
                     <label
@@ -115,6 +116,7 @@ const InputField = ({
                     required={required}
                     disabled={disabled}
                     className={baseInput}
+                    autoComplete='off'
                     {...props}
                 />
 
