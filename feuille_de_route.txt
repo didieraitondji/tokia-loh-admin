@@ -92,3 +92,18 @@ Utile
 
 Secondaire 
     Paramètres
+
+
+
+
+Bonsoir Monsieur,
+J'espère que vous allez bien?!
+
+Aujourd'hui, j'ai principalement travaillé sur tokia-loh-backoffice
+
+J'ai intégré l'API pour la page de notification (elle est fonctionnel à 100%)
+J'ai intégré l'API pour la page de commande (elle est fonctionnel à 100%)
+
+J'ai travaillé sur le menu Rapports
+
+Actuellement, il reste le menu Paramètre dont l'endpoint n'est pas encore disponible.

@@ -69,27 +69,27 @@ const App = () => (
                 } />
 
                 {/* ── Routes protégées ── */}
-                <Route path="/dashboard" element={<PrivatePage page={DashboardPage} />} />
+                <Route path="/dashboard" element={<PrivatePage page={DashboardPage} showSearch={false} />} />
 
-                <Route path="/products" element={<PrivatePage page={ProductsPage} />} />
-                <Route path="/products/:id" element={<PrivatePage page={ProductDetailPage} />} />
+                <Route path="/products" element={<PrivatePage page={ProductsPage} showSearch={false} />} />
+                <Route path="/products/:id" element={<PrivatePage page={ProductDetailPage} showSearch={false} />} />
 
-                <Route path="/categories" element={<PrivatePage page={CategoriesPage} />} />
-                <Route path="/categories/:id" element={<PrivatePage page={CategoryDetailPage} />} />
+                <Route path="/categories" element={<PrivatePage page={CategoriesPage} />} showSearch={false} />
+                <Route path="/categories/:id" element={<PrivatePage page={CategoryDetailPage} showSearch={false} />} />
 
-                <Route path="/orders" element={<PrivatePage page={OrdersPage} />} />
-                <Route path="/orders/:id" element={<PrivatePage page={OrderDetailPage} />} />
+                <Route path="/orders" element={<PrivatePage page={OrdersPage} showSearch={false} />} />
+                <Route path="/orders/:id" element={<PrivatePage page={OrderDetailPage} showSearch={false} />} />
 
-                <Route path="/clients" element={<PrivatePage page={ClientsPage} />} />
-                <Route path="/clients/:id" element={<PrivatePage page={ClientDetailPage} />} />
+                <Route path="/clients" element={<PrivatePage page={ClientsPage} showSearch={false} />} />
+                <Route path="/clients/:id" element={<PrivatePage page={ClientDetailPage} showSearch={false} />} />
 
-                <Route path="/cities" element={<PrivatePage page={VillesPage} />} />
-                <Route path="/cities/:id" element={<PrivatePage page={VilleDetailPage} />} />
+                <Route path="/cities" element={<PrivatePage page={VillesPage} showSearch={false} />} />
+                <Route path="/cities/:id" element={<PrivatePage page={VilleDetailPage} showSearch={false} />} />
 
-                <Route path="/notifications" element={<PrivatePage page={NotificationsPage} />} />
-                <Route path="/reports" element={<PrivatePage page={ReportsPage} />} />
+                <Route path="/notifications" element={<PrivatePage page={NotificationsPage} showSearch={false} />} />
+                <Route path="/reports" element={<PrivatePage page={ReportsPage} />} showSearch={false} />
                 <Route path="/settings" element={<PrivatePage page={SettingsPage} showSearch={false} />} />
-                <Route path="/publish" element={<PrivatePage page={PublishPage} />} />
+                <Route path="/publish" element={<PrivatePage page={PublishPage} showSearch={false} />} />
                 <Route path="/profile" element={<PrivatePage page={ProfilePage} showSearch={false} />} />
 
                 {/* ── 404 → dashboard ── */}

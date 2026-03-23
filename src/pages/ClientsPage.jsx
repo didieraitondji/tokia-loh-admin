@@ -1,43 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserCheck, UserMinus, UserX } from 'lucide-react';
+import { Users, UserCheck, UserMinus, UserX, Loader2, AlertCircle } from 'lucide-react';
 import StatCard from '../components/dashboard/StatCard';
-import ClientsTable, { MOCK_CLIENTS } from '../components/clients/ClientsTable';
+import ClientsTable from '../components/clients/ClientsTable';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useToast } from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
+import { useClients, deriveStatus } from '../hooks/useClients';
 
 const ClientsPage = () => {
-    const [deleteTarget, setDeleteTarget] = useState(null);
-    const [clients, setClients] = useState(MOCK_CLIENTS);
+    const { clients, loading, error, deactivate } = useClients();
     const { toasts, showToast, removeToast } = useToast();
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Clients';
-        // TODO : appel API GET /clients
     }, []);
 
-    // ── Actions inline depuis le tableau ─────────────────────
-    const handleDisable = (client) => {
-        const newStatus = client.status === 'Désactivé' ? 'Actif' : 'Désactivé';
-        setClients(prev => prev.map(c => c.id === client.id ? { ...c, status: newStatus } : c));
-        // TODO : appel API PATCH /clients/:id/status
+    // Enrichit chaque client avec son statut dérivé des champs API
+    const clientsWithStatus = clients.map(c => ({ ...c, status: deriveStatus(c) }));
+
+    // ── Actions ───────────────────────────────────────────────
+
+    const handleDisable = async (client) => {
+        // Réactivation non disponible côté API pour l'instant
+        if (client.is_active === false) {
+            showToast({ message: 'La réactivation n\'est pas encore disponible.', type: 'info' });
+            return;
+        }
+        try {
+            await deactivate(client.id);
+            showToast({ message: `Client désactivé avec succès.` });
+        } catch (err) {
+            showToast({ message: err.message ?? 'Erreur lors de la désactivation.', type: 'error' });
+        }
     };
 
     const handleBlock = (client) => {
-        const newStatus = client.status === 'Bloqué' ? 'Actif' : 'Bloqué';
-        setClients(prev => prev.map(c => c.id === client.id ? { ...c, status: newStatus } : c));
-        // TODO : appel API PATCH /clients/:id/status
+        // Endpoint de blocage non encore disponible dans l'API v5
+        showToast({ message: 'La fonctionnalité de blocage n\'est pas encore disponible.', type: 'info' });
     };
 
     const handleDelete = (client) => {
         setDeleteTarget(client);
-
     };
 
     const handleConfirmDelete = () => {
-        setClients(prev => prev.filter(c => c.id !== deleteTarget.id));
+        // Endpoint DELETE /accounts/clients/:id/ non disponible dans l'API v5
+        showToast({ message: 'La suppression n\'est pas encore disponible via l\'API.', type: 'info' });
         setDeleteTarget(null);
-        showToast({ message: 'Client supprimé avec succès.' });
     };
 
     const handleCancelDelete = () => {
@@ -45,11 +55,25 @@ const ClientsPage = () => {
         showToast({ message: 'Suppression annulée.', type: 'info' });
     };
 
-    // ── Stats ─────────────────────────────────────────────────
-    const total = clients.length;
-    const actifs = clients.filter(c => c.status === 'Actif').length;
-    const desactives = clients.filter(c => c.status === 'Désactivé').length;
-    const bloques = clients.filter(c => c.status === 'Bloqué').length;
+    // ── Stats calculées depuis les données API ────────────────
+    const total = clientsWithStatus.length;
+    const actifs = clientsWithStatus.filter(c => c.status === 'Actif').length;
+    const desactives = clientsWithStatus.filter(c => c.status === 'Désactivé').length;
+    const bloques = clientsWithStatus.filter(c => c.status === 'Bloqué').length;
+
+    // ── États de chargement / erreur ──────────────────────────
+    if (loading) return (
+        <div className="flex items-center justify-center h-48">
+            <Loader2 size={24} className="animate-spin text-primary-1" />
+        </div>
+    );
+
+    if (error) return (
+        <div className="flex flex-col items-center justify-center gap-3 h-48 text-danger-1">
+            <AlertCircle size={32} />
+            <p className="text-sm font-poppins font-medium">{error}</p>
+        </div>
+    );
 
     return (
         <div className="flex flex-col gap-6">
@@ -78,7 +102,7 @@ const ClientsPage = () => {
                     icon={<UserCheck size={18} />}
                     color="success"
                     trend="up"
-                    trendLabel={`${Math.round((actifs / total) * 100)}%`}
+                    trendLabel={total > 0 ? `${Math.round((actifs / total) * 100)}%` : '0%'}
                 />
                 <StatCard
                     title="Désactivés"
@@ -96,18 +120,19 @@ const ClientsPage = () => {
 
             {/* ── Tableau clients ── */}
             <ClientsTable
-                clients={clients}
-                setClients={setClients}
+                clients={clientsWithStatus}
                 onDisable={handleDisable}
                 onBlock={handleBlock}
                 onDelete={handleDelete}
             />
+
+            {/* ── Modal suppression ── */}
             <DeleteConfirmModal
                 isOpen={!!deleteTarget}
                 onConfirm={handleConfirmDelete}
                 onCancel={handleCancelDelete}
                 title="Supprimer le client"
-                message={`Voulez-vous vraiment supprimer définitivement "${deleteTarget?.firstName} ${deleteTarget?.lastName}" ? Cette action est irréversible.`}
+                message={`Voulez-vous vraiment supprimer définitivement "${deleteTarget?.first_name} ${deleteTarget?.last_name}" ? Cette action est irréversible.`}
             />
 
             {/* ── Toasts ── */}
