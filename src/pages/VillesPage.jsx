@@ -6,9 +6,11 @@ import StatCard from '../components/dashboard/StatCard';
 import VillesTable from '../components/villes/VillesTable';
 import VilleFormModal from '../components/villes/VilleFormModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import { useToast } from '../components/ui/ToastProvider';
 
 const VillesPage = () => {
     const { villes, loading, error, create, update, remove } = useVilles();
+    const { toast } = useToast();
 
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedVille, setSelectedVille] = useState(null);
@@ -37,12 +39,24 @@ const VillesPage = () => {
     const handleClose = () => { setModalOpen(false); setSelectedVille(null); };
 
     const handleSave = async (formData) => {
-        if (selectedVille) {
-            await update(selectedVille.id, formData);
-        } else {
-            await create(formData);
+        try {
+            if (selectedVille) {
+                await update(selectedVille.id, formData);
+                toast.success("Ville mise à jour avec succès");
+            } else {
+                await create(formData);
+                toast.success("Ville ajoutée avec succès");
+            }
+            handleClose();
+        } catch (err) {
+            const errorMsg = err.response?.data?.name?.[0] || err.response?.data?.detail;
+
+            if (errorMsg?.includes('already exists') || errorMsg?.includes('existe déjà')) {
+                toast.error(`La ville "${formData.name}" existe déjà !`);
+            } else {
+                toast.error("Une erreur est survenue lors de l'enregistrement.");
+            }
         }
-        handleClose();
     };
 
     const handleToggle = async (ville) => {

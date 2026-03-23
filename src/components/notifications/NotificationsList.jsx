@@ -137,7 +137,7 @@ const NotificationsList = () => {
                             {tab.label}
                             {count > 0 && (
                                 <span className={`
-                                    inline-flex items-center justify-center min-w-[18px] h-[18px] px-1
+                                    inline-flex items-center justify-center min-w-4.5 h-4.5 px-1
                                     rounded-full text-[10px] font-bold leading-none
                                     ${isActive ? 'bg-primary-5 text-primary-1' : 'bg-neutral-2 text-neutral-5'}
                                 `}>
@@ -180,7 +180,7 @@ const NotificationsList = () => {
                                 `}
                             >
                                 {/* Dot non lu */}
-                                <div className="pt-[18px] shrink-0 w-2">
+                                <div className="pt-4.5 shrink-0 w-2">
                                     {!notif.read && (
                                         <span className="block w-1.5 h-1.5 rounded-full bg-primary-1" />
                                     )}

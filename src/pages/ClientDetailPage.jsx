@@ -67,7 +67,7 @@ const ClientDetailPage = () => {
     const firstName = client?.first_name ?? '';
     const lastName = client?.last_name ?? '';
     const phone = client?.phone ?? '—';
-    const city = displayCity(client?.city);
+    const city = displayCity(client?.city_details.name);
     const joinedAt = formatDate(client?.joined_at);
     const lastLogin = formatDateTime(client?.last_login);
     const status = client?.is_active === false ? 'Désactivé'
@@ -90,7 +90,7 @@ const ClientDetailPage = () => {
                 fullName,                 // ← écrase le "" de normalizeOrder
                 firstName: client.first_name ?? '',
                 lastName: client.last_name ?? '',
-                city: displayCity(client.city),
+                city: displayCity(client.city_details.name),
             },
         }));
     }, [orders, client]);
