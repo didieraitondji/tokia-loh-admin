@@ -1,70 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingCart, Package, BarChart2 } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Package, BarChart2, Loader2, AlertCircle } from 'lucide-react';
 import StatCard from '../components/dashboard/StatCard';
-import SalesChart from '../components/dashboard/SalesChart';
 import ReportFilters from '../components/reports/ReportFilters';
 import SalesByCategoryChart from '../components/reports/SalesByCategoryChart';
 import SalesByProductTable from '../components/reports/SalesByProductTable';
 import ReportExporter from '../components/reports/ReportExporter';
+import { useReports } from '../hooks/useReports';
 
-// Données mock résumées par période — à remplacer par l'API
-const SUMMARY = {
-    day: { ca: '120 500 F', orders: 8, products: 13, growth: '+8%' },
-    week: { ca: '642 000 F', orders: 47, products: 89, growth: '+15%' },
-    month: { ca: '2 580 000 F', orders: 189, products: 340, growth: '+22%' },
-};
-
-// Mock données pour l'export — normalement passées depuis l'état
-const MOCK_PRODUCTS_DATA = {
-    day: [
-        { rank: 1, name: 'Robe Ankara Wax', category: 'Robes', qty: 3, ca: 45000, trend: 'up' },
-        { rank: 2, name: 'Sac en raphia naturel', category: 'Sacs', qty: 2, ca: 24000, trend: 'up' },
-        { rank: 3, name: 'Chemise bazin brodée', category: 'Chemises', qty: 1, ca: 18000, trend: 'neutral' },
-        { rank: 4, name: 'Sandales tressées', category: 'Chaussures', qty: 2, ca: 16000, trend: 'down' },
-        { rank: 5, name: 'Bracelet perles coco', category: 'Bijoux', qty: 3, ca: 10500, trend: 'up' },
-    ],
-    week: [
-        { rank: 1, name: 'Robe Ankara Wax', category: 'Robes', qty: 15, ca: 225000, trend: 'up' },
-        { rank: 2, name: 'Sac en raphia naturel', category: 'Sacs', qty: 12, ca: 144000, trend: 'up' },
-        { rank: 3, name: 'Sandales tressées', category: 'Chaussures', qty: 12, ca: 96000, trend: 'neutral' },
-        { rank: 4, name: 'Chemise bazin brodée', category: 'Chemises', qty: 5, ca: 90000, trend: 'down' },
-        { rank: 5, name: 'Bracelet perles coco', category: 'Bijoux', qty: 15, ca: 52500, trend: 'up' },
-    ],
-    month: [
-        { rank: 1, name: 'Robe Ankara Wax', category: 'Robes', qty: 60, ca: 900000, trend: 'up' },
-        { rank: 2, name: 'Sac en raphia naturel', category: 'Sacs', qty: 48, ca: 576000, trend: 'up' },
-        { rank: 3, name: 'Sandales tressées', category: 'Chaussures', qty: 48, ca: 384000, trend: 'down' },
-        { rank: 4, name: 'Chemise bazin brodée', category: 'Chemises', qty: 20, ca: 360000, trend: 'neutral' },
-        { rank: 5, name: 'Bracelet perles coco', category: 'Bijoux', qty: 60, ca: 210000, trend: 'up' },
-    ],
-};
-
-const MOCK_CATEGORIES_DATA = {
-    day: [
-        { category: 'Robes', ca: 45000, orders: 3 },
-        { category: 'Sacs', ca: 24000, orders: 2 },
-        { category: 'Chaussures', ca: 16000, orders: 2 },
-        { category: 'Bijoux', ca: 10500, orders: 3 },
-        { category: 'Chemises', ca: 18000, orders: 1 },
-        { category: 'Accessoires', ca: 7000, orders: 2 },
-    ],
-    week: [
-        { category: 'Robes', ca: 225000, orders: 15 },
-        { category: 'Sacs', ca: 144000, orders: 12 },
-        { category: 'Chaussures', ca: 96000, orders: 12 },
-        { category: 'Bijoux', ca: 52500, orders: 15 },
-        { category: 'Chemises', ca: 90000, orders: 5 },
-        { category: 'Accessoires', ca: 35000, orders: 10 },
-    ],
-    month: [
-        { category: 'Robes', ca: 900000, orders: 60 },
-        { category: 'Sacs', ca: 576000, orders: 48 },
-        { category: 'Chaussures', ca: 384000, orders: 48 },
-        { category: 'Bijoux', ca: 210000, orders: 60 },
-        { category: 'Chemises', ca: 360000, orders: 20 },
-        { category: 'Accessoires', ca: 140000, orders: 40 },
-    ],
-};
+const formatPrice = (p) => `${Number(p).toLocaleString('fr-FR')} F`;
 
 // Dates par défaut
 const today = new Date().toISOString().slice(0, 10);
@@ -75,13 +18,56 @@ const ReportsPage = () => {
     const [dateFrom, setDateFrom] = useState(weekAgo);
     const [dateTo, setDateTo] = useState(today);
 
+    const { report, products, loading, error, fetch } = useReports();
+
+    // Chargement initial et à chaque changement de filtre
     useEffect(() => {
         document.title = 'Admin Tokia-Loh | Rapports';
-    }, []);
+        fetch({ period });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const summary = SUMMARY[period];
-    const productsData = MOCK_PRODUCTS_DATA[period];
-    const categoriesData = MOCK_CATEGORIES_DATA[period];
+    const handlePeriodChange = (p) => {
+        setPeriod(p);
+        fetch({ period: p });
+    };
+
+    const handleDateChange = ({ from, to }) => {
+        setDateFrom(from);
+        setDateTo(to);
+        if (from && to) {
+            // Passe en mode plage personnalisée
+            setPeriod(null);
+            fetch({ dateFrom: from, dateTo: to });
+        }
+    };
+
+    // ── États ─────────────────────────────────────────────────
+    if (loading) return (
+        <div className="flex items-center justify-center h-48">
+            <Loader2 size={24} className="animate-spin text-primary-1" />
+        </div>
+    );
+
+    if (error) return (
+        <div className="flex flex-col items-center justify-center gap-3 h-48 text-danger-1">
+            <AlertCircle size={32} />
+            <p className="text-sm font-poppins font-medium">{error}</p>
+        </div>
+    );
+
+    // Données prêtes (ou vides par défaut)
+    const turnover = report?.turnover ?? 0;
+    const totalOrders = report?.totalOrders ?? 0;
+    const productsSold = report?.productsSold ?? 0;
+    const averageBasket = report?.averageBasket ?? 0;
+    const salesByCategory = report?.salesByCategory ?? [];
+
+    // Données pour l'export PDF/CSV
+    const exportCategories = salesByCategory.map(c => ({
+        category: c.category,
+        ca: c.ca,
+        orders: c.orders,
+    }));
 
     return (
         <div className="flex flex-col gap-6">
@@ -96,63 +82,54 @@ const ReportsPage = () => {
                 </p>
             </div>
 
-            {/* ── Filtre période ── */}
+            {/* ── Filtres ── */}
             <ReportFilters
                 period={period}
-                onPeriodChange={setPeriod}
+                onPeriodChange={handlePeriodChange}
                 dateFrom={dateFrom}
                 dateTo={dateTo}
-                onDateChange={({ from, to }) => { setDateFrom(from); setDateTo(to); }}
+                onDateChange={handleDateChange}
             />
 
-            {/* ── Stats résumées ── */}
+            {/* ── Stats ── */}
             <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
-                    title="CA de la période"
-                    value={summary.ca}
+                    title="Chiffre d'affaires"
+                    value={formatPrice(turnover)}
                     icon={<TrendingUp size={18} />}
-                    trend="up"
-                    trendLabel={summary.growth}
                     color="primary"
                 />
                 <StatCard
                     title="Commandes"
-                    value={String(summary.orders)}
+                    value={String(totalOrders)}
                     icon={<ShoppingCart size={18} />}
-                    trend="up"
-                    trendLabel="vs période préc."
                     color="secondary"
                 />
                 <StatCard
                     title="Produits vendus"
-                    value={String(summary.products)}
+                    value={String(productsSold)}
                     icon={<Package size={18} />}
                     color="success"
                 />
                 <StatCard
                     title="Panier moyen"
-                    value={`${Math.round(
-                        parseInt(summary.ca.replace(/\s/g, '')) / summary.orders
-                    ).toLocaleString('fr-FR')} F`}
+                    value={formatPrice(averageBasket)}
                     icon={<BarChart2 size={18} />}
                     color="warning"
                 />
             </div>
 
-            {/* ── Graphique ventes (réutilisé depuis dashboard) ── */}
-            <SalesChart />
-
-            {/* ── Catégories + Top produits ── */}
+            {/* ── Graphiques ── */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <SalesByCategoryChart period={period} />
-                <SalesByProductTable period={period} />
+                <SalesByCategoryChart data={salesByCategory} />
+                <SalesByProductTable data={products} />
             </div>
 
             {/* ── Export ── */}
             <ReportExporter
-                products={productsData}
-                categories={categoriesData}
-                period={period}
+                products={products}
+                categories={exportCategories}
+                period={period ?? 'custom'}
             />
         </div>
     );

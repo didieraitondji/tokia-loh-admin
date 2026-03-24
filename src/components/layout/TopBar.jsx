@@ -291,7 +291,7 @@ const TopBar = ({ onMenuToggle, showSearch = true }) => {
                                     </div>
                                 </div>
 
-                                <div className="p-1.5 flex flex-col gap-0.5">
+                                {/*<div className="p-1.5 flex flex-col gap-0.5">
                                     <button
                                         onClick={() => { navigate('/profile'); setUserMenuOpen(false); }}
                                         className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg
@@ -310,7 +310,7 @@ const TopBar = ({ onMenuToggle, showSearch = true }) => {
                                     >
                                         <Settings size={13} className="text-neutral-5" /> Paramètres
                                     </button>
-                                </div>
+                                </div> */}
 
                                 <div className="border-t border-neutral-4 dark:border-neutral-4 p-1.5">
                                     <button

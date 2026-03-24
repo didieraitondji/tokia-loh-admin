@@ -116,6 +116,48 @@ class DashboardAPI {
   generateReportPdf() {
     return api.get("/shop/generate-report-pdf", { responseType: "blob" });
   }
+
+  /**
+   * Stats rapport.
+   * Modes :
+   *   { period: 'today' | 'this_week' | 'this_month' | 'all' }
+   *   { startDate: 'DD-MM-YYYY', endDate: 'DD-MM-YYYY' }
+   */
+  getReport({ period, startDate, endDate } = {}) {
+    const params = {};
+    if (startDate && endDate) {
+      params.start_date = startDate;
+      params.end_date = endDate;
+    } else if (period) {
+      params.period = period;
+    }
+    return api.get("/shop/dashboard-rapport/", { params });
+  }
+
+  /** Top produits vendus */
+  getTopProducts() {
+    return api.get("/shop/dashboard-product/");
+  }
+
+  /** Stats commandes (total, in_progress, delivered, canceled) */
+  listOrdersStats() {
+    return api.get("/shop/dashboard-orders/");
+  }
+
+  /** Liste complète des commandes paginée */
+  listOrders(params = {}) {
+    return api.get("/shop/dashboard/orders/", { params });
+  }
+
+  /** Historique commandes d'un client */
+  getClientOrderHistory(clientId) {
+    return api.get(`/shop/dashboard/orders/client/${clientId}/history/`);
+  }
+
+  /** Mise à jour du statut d'une commande */
+  updateOrderStatus(orderId, status) {
+    return api.put(`/shop/dashboard/orders/${orderId}/status/`, { status });
+  }
 }
 
 export const dashboardAPI = new DashboardAPI();
