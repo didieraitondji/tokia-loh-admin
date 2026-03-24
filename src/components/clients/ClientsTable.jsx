@@ -140,7 +140,7 @@ const ClientsTable = ({ clients = [], onDisable, onBlock, onDelete }) => {
                                 </td>
 
                                 <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">
-                                    {client.city_details.name ?? '—'}
+                                    {client.city_details?.name ?? '—'}
                                 </td>
 
                                 <td className="px-4 py-3 text-neutral-6 dark:text-neutral-6 whitespace-nowrap">

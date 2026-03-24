@@ -20,10 +20,8 @@ const formatDateTime = (iso) =>
         hour: '2-digit', minute: '2-digit'
     }) : '—';
 
-const displayCity = (city) => {
-    if (!city) return '—';
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(city);
-    return isUUID ? '—' : city;
+const displayCity = (client) => {
+    return client?.city_details?.name ?? '--';
 };
 
 const ClientAvatarLarge = ({ firstName, lastName }) => (
@@ -67,7 +65,7 @@ const ClientDetailPage = () => {
     const firstName = client?.first_name ?? '';
     const lastName = client?.last_name ?? '';
     const phone = client?.phone ?? '—';
-    const city = displayCity(client?.city_details.name);
+    const city = displayCity(client);
     const joinedAt = formatDate(client?.joined_at);
     const lastLogin = formatDateTime(client?.last_login);
     const status = client?.is_active === false ? 'Désactivé'
@@ -90,7 +88,7 @@ const ClientDetailPage = () => {
                 fullName,                 // ← écrase le "" de normalizeOrder
                 firstName: client.first_name ?? '',
                 lastName: client.last_name ?? '',
-                city: displayCity(client.city_details.name),
+                city: displayCity(client),
             },
         }));
     }, [orders, client]);
