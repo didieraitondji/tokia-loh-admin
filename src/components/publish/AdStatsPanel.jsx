@@ -2,22 +2,19 @@ import React from 'react';
 import { Megaphone, Users, Wallet, TrendingUp } from 'lucide-react';
 import StatCard from '../dashboard/StatCard';
 
-/*
-  Props :
-  - campaigns : array — liste complète des campagnes pour calculer les stats
-*/
 const AdStatsPanel = ({ campaigns = [] }) => {
-    const actives = campaigns.filter(c => c.status === 'Active').length;
+    const actives = campaigns.filter(c => c.status === 'ongoing').length;
     const totalBudget = campaigns.reduce((acc, c) => acc + (Number(c.budget) || 0), 0);
-    const totalReach = campaigns.reduce((acc, c) => acc + (c.estimatedReach || 0), 0);
-    const avgConv = campaigns.length
-        ? (campaigns.reduce((acc, c) => acc + (c.convRate || 0), 0) / campaigns.length).toFixed(1)
-        : '0.0';
+    const totalPeople = campaigns.reduce((acc, c) => acc + (Number(c.people) || 0), 0);
+
+    // Nombre de canaux uniques utilisés toutes campagnes confondues
+    const allChannels = campaigns.flatMap(c => c.social_media ?? []);
+    const uniqueChannels = new Set(allChannels).size;
 
     return (
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard
-                title="Campagnes actives"
+                title="Publicités actives"
                 value={String(actives)}
                 icon={<Megaphone size={18} />}
                 color="primary"
@@ -25,26 +22,30 @@ const AdStatsPanel = ({ campaigns = [] }) => {
                 trendLabel={`sur ${campaigns.length} total`}
             />
             <StatCard
-                title="Portée estimée"
-                value={totalReach >= 1000 ? `${(totalReach / 1000).toFixed(1)}k` : String(totalReach)}
+                title="Personnes ciblées"
+                value={totalPeople > 0
+                    ? totalPeople >= 1000
+                        ? `${(totalPeople / 1000).toFixed(1)}k`
+                        : String(totalPeople)
+                    : '—'}
                 icon={<Users size={18} />}
                 color="secondary"
-                trend="up"
-                trendLabel="personnes touchées"
+                trendLabel="toutes campagnes"
             />
             <StatCard
                 title="Budget total engagé"
-                value={`${totalBudget.toLocaleString('fr-FR')} F`}
+                value={totalBudget > 0
+                    ? `${totalBudget.toLocaleString('fr-FR')} F`
+                    : '—'}
                 icon={<Wallet size={18} />}
                 color="warning"
             />
             <StatCard
-                title="Taux de conversion moy."
-                value={`${avgConv}%`}
+                title="Canaux utilisés"
+                value={String(uniqueChannels)}
                 icon={<TrendingUp size={18} />}
                 color="success"
-                trend="up"
-                trendLabel="vs mois dernier"
+                trendLabel="canaux distincts"
             />
         </div>
     );

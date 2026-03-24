@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { pubsAPI } from "../api/pubs.api";
-import { MOCK_PUBS } from "../mockData";
 
-const USE_MOCK = false; // 🔧 Passer à false quand l'API est prête
+const toArray = (data) => {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  if (data && Array.isArray(data.data)) return data.data;
+  return [];
+};
 
 export const usePubs = () => {
   const [pubs, setPubs] = useState([]);
@@ -13,13 +17,8 @@ export const usePubs = () => {
     setLoading(true);
     setError(null);
     try {
-      if (USE_MOCK) {
-        await new Promise((r) => setTimeout(r, 400));
-        setPubs(MOCK_PUBS);
-      } else {
-        const { data } = await pubsAPI.list();
-        setPubs(data);
-      }
+      const { data } = await pubsAPI.list();
+      setPubs(toArray(data));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -32,38 +31,18 @@ export const usePubs = () => {
   }, [fetchAll]);
 
   const create = async (payload) => {
-    if (USE_MOCK) {
-      const newItem = {
-        ...payload,
-        id: `pub-${Date.now()}`,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      setPubs((prev) => [...prev, newItem]);
-      return newItem;
-    }
     const { data } = await pubsAPI.create(payload);
-    setPubs((prev) => [...prev, data]);
+    setPubs((prev) => [data, ...prev]);
     return data;
   };
 
   const update = async (id, payload) => {
-    if (USE_MOCK) {
-      setPubs((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...payload } : p)),
-      );
-      return { ...payload, id };
-    }
     const { data } = await pubsAPI.update(id, payload);
     setPubs((prev) => prev.map((p) => (p.id === id ? data : p)));
     return data;
   };
 
   const remove = async (id) => {
-    if (USE_MOCK) {
-      setPubs((prev) => prev.filter((p) => p.id !== id));
-      return;
-    }
     await pubsAPI.delete(id);
     setPubs((prev) => prev.filter((p) => p.id !== id));
   };

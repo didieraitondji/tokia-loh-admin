@@ -1,83 +1,70 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, Trash2, Eye, MessageCircle } from 'lucide-react';
+import { X, Trash2, ImageIcon } from 'lucide-react';
 import InputField from '../InputField';
 import Button from '../Button';
-import ProductStatusToggle from '../products/ProductStatusToggle';
 import AdChannelBadge, { CHANNEL_CONFIG } from './AdChannelBadge';
-
-// Produits mock — à remplacer par l'API
-const MOCK_PRODUCTS = [
-    { id: 1, name: 'Robe Ankara Wax' },
-    { id: 2, name: 'Sandales tressées' },
-    { id: 3, name: 'Sac en raphia naturel' },
-    { id: 4, name: 'Chemise bazin brodée' },
-    { id: 5, name: 'Bracelet perles coco' },
-    { id: 6, name: 'Collier wax multicolor' },
-];
-
-// Portée estimée par canal (mock)
-const REACH_BY_CHANNEL = {
-    WhatsApp: 3200,
-    Facebook: 8500,
-    Instagram: 6100,
-    SMS: 4800,
-    Email: 2100,
-};
-
-const PALETTE = ['#0EA5E9', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4'];
+import { filesAPI } from '../../api/files.api';
+import { STATUS_API } from '../../constants/pubStatus';
 
 const CHANNELS = Object.keys(CHANNEL_CONFIG);
 
 const EMPTY_FORM = {
-    name: '',
-    channels: [],
-    productId: '',
-    productName: '',
-    message: '',
-    color: '#0EA5E9',
-    image: null,
+    title: '',
+    content: '',
+    image: null,        // URL string après upload
     budget: '',
-    dateFrom: '',
-    dateTo: '',
-    active: false,
-    estimatedReach: 0,
-    convRate: 2.5,
+    end_date: '',
+    social_media: [],
+    people: 0,
+    status: 'draft',    // valeur API
 };
-
-// Bulle WhatsApp inline (aperçu dans le formulaire)
-const InlineWhatsAppPreview = ({ message, productName }) => (
-    <div className="bg-[#ECE5DD] dark:bg-[#0d1418] rounded-2 p-3">
-        <p className="text-[10px] font-poppins text-neutral-5 mb-2">Aperçu WhatsApp</p>
-        <div className="bg-white dark:bg-[#1f2c34] rounded-2 rounded-tl-none px-3 py-2 max-w-[85%] shadow-sm">
-            {productName && (
-                <p className="text-[11px] font-semibold font-poppins text-[#075E54] mb-1">🛍️ {productName}</p>
-            )}
-            <p className="text-xs font-poppins text-neutral-8 dark:text-neutral-8 whitespace-pre-wrap leading-relaxed">
-                {message || 'Votre message apparaîtra ici...'}
-            </p>
-            <p className="text-[10px] text-neutral-5 text-right mt-1">
-                {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} ✓✓
-            </p>
-        </div>
-    </div>
-);
 
 const AdCampaignForm = ({ open, onClose, campaign = null, onSave }) => {
     const [form, setForm] = useState(EMPTY_FORM);
+    const [preview, setPreview] = useState(null);
     const [errors, setErrors] = useState({});
+    const [apiError, setApiError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const imageRef = useRef(null);
+    const [manualTarget, setManualTarget] = useState(false);
 
     const isEdit = !!campaign;
 
     useEffect(() => {
         if (open) {
-            setForm(campaign ? { ...EMPTY_FORM, ...campaign } : EMPTY_FORM);
+            if (campaign) {
+                setForm({
+                    title: campaign.title ?? '',
+                    content: campaign.content ?? '',
+                    image: campaign.image ?? null,
+                    budget: campaign.budget ? String(Number(campaign.budget)) : '',
+                    end_date: campaign.end_date ?? '',
+                    social_media: campaign.social_media ?? [],
+                    status: campaign.status ?? 'draft',
+                });
+                setPreview(campaign.image ?? null);
+            } else {
+                setForm(EMPTY_FORM);
+                setPreview(null);
+            }
             setErrors({});
-            setShowPreview(false);
+            setApiError('');
         }
     }, [open, campaign]);
+
+    useEffect(() => {
+        if (manualTarget) return;
+
+        const total = form.social_media.reduce((sum, channel) => {
+            return sum + (CHANNEL_CONFIG[channel]?.people || 0);
+        }, 0);
+
+        setForm(prev => ({
+            ...prev,
+            people: total
+        }));
+    }, [form.social_media, manualTarget]);
 
     useEffect(() => {
         document.body.style.overflow = open ? 'hidden' : '';
@@ -90,147 +77,159 @@ const AdCampaignForm = ({ open, onClose, campaign = null, onSave }) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+        if (name === "people") {
+            setManualTarget(true);
+        }
     };
 
-    // Toggle canal
-    const toggleChannel = (channel) => {
-        setForm(prev => {
-            const channels = prev.channels.includes(channel)
-                ? prev.channels.filter(c => c !== channel)
-                : [...prev.channels, channel];
-            // Recalculer la portée estimée
-            const estimatedReach = channels.reduce((acc, c) => acc + (REACH_BY_CHANNEL[c] || 0), 0);
-            return { ...prev, channels, estimatedReach };
-        });
-        if (errors.channels) setErrors(prev => ({ ...prev, channels: '' }));
+    const toggleChannel = (ch) => {
+        setForm(prev => ({
+            ...prev,
+            social_media: prev.social_media.includes(ch)
+                ? prev.social_media.filter(c => c !== ch)
+                : [...prev.social_media, ch],
+        }));
     };
 
-    // Sélection produit
-    const handleProduct = (e) => {
-        const id = e.target.value;
-        const prod = MOCK_PRODUCTS.find(p => String(p.id) === id);
-        setForm(prev => ({ ...prev, productId: id, productName: prod?.name ?? '' }));
-    };
-
-    // Upload image
-    const handleImage = (e) => {
+    // Sélection image → aperçu local + upload immédiat
+    const handleImageSelect = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const preview = URL.createObjectURL(file);
-        setForm(prev => ({ ...prev, image: { file, preview } }));
+        setPreview(URL.createObjectURL(file));
+        setUploadingImage(true);
+        setApiError('');
+        try {
+            const { data } = await filesAPI.upload(file);
+            // Réponse : { success, data: { id, file, created_at } }
+            const url = data?.data?.file ?? data?.file ?? data?.url;
+            setForm(prev => ({ ...prev, image: url }));
+        } catch {
+            setApiError("Échec de l'upload. Réessayez.");
+            setPreview(form.image);
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
-    // Validation
+    const removeImage = () => {
+        setPreview(null);
+        setForm(prev => ({ ...prev, image: null }));
+        if (imageRef.current) imageRef.current.value = '';
+    };
+
     const validate = () => {
         const e = {};
-        if (!form.name.trim()) e.name = 'Nom de la campagne requis';
-        if (!form.channels.length) e.channels = 'Sélectionnez au moins un canal';
-        if (!form.message.trim()) e.message = 'Message publicitaire requis';
-        if (!form.dateFrom) e.dateFrom = 'Date de début requise';
-        if (!form.dateTo) e.dateTo = 'Date de fin requise';
-        if (form.dateFrom && form.dateTo && form.dateFrom > form.dateTo) {
-            e.dateTo = 'La date de fin doit être après le début';
-        }
+        if (!form.title.trim()) e.title = 'Titre requis';
+        if (!form.content.trim()) e.content = 'Contenu requis';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
 
     const handleSubmit = async () => {
-        if (!validate()) return;
+        if (!validate() || uploadingImage) return;
         setLoading(true);
-        await new Promise(r => setTimeout(r, 1200));
-        setLoading(false);
-        onSave?.({
-            ...form,
-            id: campaign?.id ?? Date.now(),
-            status: form.active ? 'Active' : 'Brouillon',
-        });
-        onClose();
+        setApiError('');
+        try {
+            const payload = {
+                title: form.title.trim(),
+                content: form.content.trim(),
+                image: form.image ?? null,
+                budget: form.budget ? form.budget : '0.00',
+                end_date: form.end_date || null,
+                social_media: form.social_media,
+                people: form.people,
+                status: form.status,
+            };
+            await onSave?.(payload);
+            onClose();
+        } catch (err) {
+            const detail =
+                err?.response?.data?.detail ??
+                err?.response?.data?.image?.[0] ??
+                err.message ??
+                'Une erreur est survenue';
+            setApiError(detail);
+        } finally {
+            setLoading(false);
+        }
     };
-
-    const hasWhatsApp = form.channels.includes('WhatsApp');
 
     return (
         <>
-            {/* Overlay */}
-            <div className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-40 backdrop-blur-sm" onClick={onClose} />
+            <div
+                className="fixed inset-0 bg-neutral-8/40 dark:bg-neutral-2/60 z-40 backdrop-blur-sm"
+                onClick={onClose}
+            />
 
-            {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="
                     bg-neutral-0 dark:bg-neutral-0
                     rounded-3 shadow-xl
-                    w-full max-w-2xl max-h-[92vh]
+                    w-full max-w-lg max-h-[92vh]
                     flex flex-col overflow-hidden
                 ">
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-4 dark:border-neutral-4 shrink-0">
                         <h2 className="text-sm font-bold font-poppins text-neutral-8 dark:text-neutral-8">
-                            {isEdit ? 'Modifier la campagne' : 'Nouvelle campagne publicitaire'}
+                            {isEdit ? 'Modifier la publicité' : 'Nouvelle publicité'}
                         </h2>
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-3 dark:hover:bg-neutral-3 text-neutral-6 hover:text-neutral-8 transition-colors cursor-pointer">
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-3 text-neutral-6 hover:text-neutral-8 transition-colors cursor-pointer"
+                        >
                             <X size={16} />
                         </button>
                     </div>
 
                     {/* Body */}
-                    <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-6">
+                    <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-5">
 
-                        {/* Infos campagne */}
-                        <div className="flex flex-col gap-4">
-                            <p className="text-xs font-semibold font-poppins text-neutral-6 uppercase tracking-wide">Informations générales</p>
-
-                            <InputField
-                                label="Nom de la campagne"
-                                name="name"
-                                value={form.name}
-                                onChange={handleChange}
-                                placeholder="Ex: Soldes été 2025 — Robes"
-                                error={errors.name}
-                                required
-                            />
-
-                            {/* Produit mis en avant */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
-                                    Produit mis en avant
-                                </label>
-                                <select
-                                    name="productId"
-                                    value={form.productId}
-                                    onChange={handleProduct}
-                                    className="
-                                        w-full rounded-full border border-neutral-5 dark:border-neutral-5
-                                        bg-neutral-0 dark:bg-neutral-0
-                                        px-4 py-2.5 text-xs font-poppins text-neutral-8 dark:text-neutral-8
-                                        outline-none focus:border-primary-1 focus:ring-2 focus:ring-primary-5
-                                        transition-all cursor-pointer
-                                    "
-                                >
-                                    <option value="">Aucun produit spécifique</option>
-                                    {MOCK_PRODUCTS.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                </select>
+                        {apiError && (
+                            <div className="rounded-2 bg-danger-2 border border-danger-1 px-4 py-3">
+                                <p className="text-xs font-poppins text-danger-1">{apiError}</p>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Titre */}
+                        <InputField
+                            label="Titre"
+                            name="title"
+                            value={form.title}
+                            onChange={handleChange}
+                            placeholder="Ex: Soldes été — Robes Ankara"
+                            error={errors.title}
+                            required
+                        />
+
+                        {/* Contenu */}
+                        <InputField
+                            label="Contenu"
+                            name="content"
+                            type="textarea"
+                            value={form.content}
+                            onChange={handleChange}
+                            placeholder="Rédigez le message de votre publicité..."
+                            error={errors.content}
+                            required
+                        />
 
                         {/* Canaux */}
-                        <div className="flex flex-col gap-3">
-                            <p className="text-xs font-semibold font-poppins text-neutral-6 uppercase tracking-wide">
-                                Canaux de diffusion <span className="text-danger-1">*</span>
-                            </p>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
+                                Canaux de diffusion
+                            </label>
                             <div className="flex flex-wrap gap-2">
                                 {CHANNELS.map(ch => {
-                                    const selected = form.channels.includes(ch);
+                                    const selected = form.social_media.includes(ch);
                                     return (
                                         <button
                                             key={ch}
                                             type="button"
                                             onClick={() => toggleChannel(ch)}
                                             className={`
-                                                flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold font-poppins
-                                                border-2 transition-all duration-200 cursor-pointer
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                                                text-xs font-semibold font-poppins border-2
+                                                transition-all duration-200 cursor-pointer
                                                 ${selected
                                                     ? 'border-primary-1 bg-primary-5 text-primary-1'
                                                     : 'border-neutral-4 text-neutral-6 hover:border-primary-3'
@@ -242,156 +241,139 @@ const AdCampaignForm = ({ open, onClose, campaign = null, onSave }) => {
                                     );
                                 })}
                             </div>
-                            {errors.channels && <p className="text-xs text-danger-1">{errors.channels}</p>}
-
-                            {/* Portée estimée */}
-                            {form.estimatedReach > 0 && (
-                                <div className="flex items-center gap-2 bg-success-2 rounded-2 px-3 py-2">
-                                    <span className="text-xs font-poppins font-medium text-success-1">
-                                        👥 Portée estimée : ~{form.estimatedReach.toLocaleString('fr-FR')} personnes
-                                    </span>
-                                </div>
-                            )}
                         </div>
 
-                        {/* Message publicitaire */}
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs font-semibold font-poppins text-neutral-6 uppercase tracking-wide">
-                                    Message publicitaire <span className="text-danger-1">*</span>
-                                </p>
-                                {hasWhatsApp && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPreview(v => !v)}
-                                        className="flex items-center gap-1 text-[11px] font-poppins font-medium text-[#16a34a] hover:underline cursor-pointer"
-                                    >
-                                        <Eye size={12} />
-                                        {showPreview ? 'Masquer l\'aperçu' : 'Aperçu WhatsApp'}
-                                    </button>
-                                )}
-                            </div>
-
+                        {/* Budget + Date fin */}
+                        <div className="grid grid-cols-2 gap-4">
                             <InputField
-                                name="message"
-                                type="textarea"
-                                value={form.message}
+                                label="Budget (F)"
+                                name="budget"
+                                type="number"
+                                value={form.budget}
                                 onChange={handleChange}
-                                placeholder="Rédigez votre message publicitaire..."
-                                error={errors.message}
+                                placeholder="Ex: 50000"
                             />
-
-                            {/* Aperçu WhatsApp inline */}
-                            {showPreview && hasWhatsApp && (
-                                <InlineWhatsAppPreview
-                                    message={form.message}
-                                    productName={form.productName}
-                                />
-                            )}
+                            <InputField
+                                label="Date de fin"
+                                name="end_date"
+                                type="date"
+                                value={form.end_date}
+                                onChange={handleChange}
+                            />
                         </div>
 
-                        {/* Visuel */}
-                        <div className="flex flex-col gap-3">
-                            <p className="text-xs font-semibold font-poppins text-neutral-6 uppercase tracking-wide">Visuel</p>
-
-                            <div className="flex items-start gap-4 flex-wrap">
-                                {/* Couleur de fond */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-poppins text-neutral-6">Couleur d'accentuation</label>
-                                    <div className="flex items-center gap-2">
-                                        {PALETTE.map(col => (
-                                            <button
-                                                key={col}
-                                                type="button"
-                                                onClick={() => setForm(prev => ({ ...prev, color: col }))}
-                                                className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer ${form.color === col ? 'border-neutral-8 scale-110' : 'border-transparent hover:scale-105'}`}
-                                                style={{ backgroundColor: col }}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Upload image */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-poppins text-neutral-6">Image (optionnel)</label>
-                                    {form.image ? (
-                                        <div className="relative w-16 h-16 rounded-2 overflow-hidden border border-neutral-4 group">
-                                            <img src={form.image.preview ?? form.image} alt="visuel" className="w-full h-full object-cover" />
-                                            <button
-                                                type="button"
-                                                onClick={() => setForm(prev => ({ ...prev, image: null }))}
-                                                className="absolute inset-0 bg-neutral-8/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
-                                            >
-                                                <Trash2 size={14} className="text-white" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={() => imageRef.current?.click()}
-                                            className="w-16 h-16 rounded-2 border-2 border-dashed border-neutral-4 flex flex-col items-center justify-center gap-1 text-neutral-6 hover:border-primary-1 hover:text-primary-1 transition-colors cursor-pointer"
-                                        >
-                                            <Upload size={14} />
-                                        </button>
-                                    )}
-                                    <input ref={imageRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
-                                </div>
-                            </div>
+                        {/*Nombre de Personnes ciblées avec valeur par défaut égale à la somme des valeurs des attributs "people" de tout les canaux choisis */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
+                                Nombre de personnes ciblées
+                            </label>
+                            <input
+                                type="number"
+                                name="people"
+                                value={form.people}
+                                onChange={handleChange}
+                                className="
+                                    w-full rounded-full border border-neutral-5
+                                    bg-neutral-0 dark:bg-neutral-0
+                                    px-4 py-2.5 text-xs font-poppins text-neutral-8
+                                    outline-none focus:border-primary-1 focus:ring-2 focus:ring-primary-5
+                                    transition-all
+                                "
+                            />
                         </div>
 
-                        {/* Budget + dates */}
-                        <div className="flex flex-col gap-4">
-                            <p className="text-xs font-semibold font-poppins text-neutral-6 uppercase tracking-wide">Budget & Période</p>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <InputField
-                                    label="Budget alloué (F)"
-                                    name="budget"
-                                    type="number"
-                                    value={form.budget}
-                                    onChange={handleChange}
-                                    placeholder="Ex: 50000"
-                                    error={errors.budget}
-                                />
-                                <InputField
-                                    label="Date de début"
-                                    name="dateFrom"
-                                    type="date"
-                                    value={form.dateFrom}
-                                    onChange={handleChange}
-                                    error={errors.dateFrom}
-                                    required
-                                />
-                                <InputField
-                                    label="Date de fin"
-                                    name="dateTo"
-                                    type="date"
-                                    value={form.dateTo}
-                                    onChange={handleChange}
-                                    error={errors.dateTo}
-                                    required
-                                />
-                            </div>
-                        </div>
 
                         {/* Statut */}
-                        <div className="flex items-center justify-between py-1">
-                            <div>
-                                <p className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">Activer immédiatement</p>
-                                <p className="text-[11px] font-poppins text-neutral-5">Sinon, la campagne sera sauvegardée en brouillon</p>
-                            </div>
-                            <ProductStatusToggle
-                                active={form.active}
-                                onChange={val => setForm(prev => ({ ...prev, active: val }))}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
+                                Statut
+                            </label>
+                            <select
+                                name="status"
+                                value={form.status}
+                                onChange={handleChange}
+                                className="
+                                    w-full rounded-full border border-neutral-5
+                                    bg-neutral-0 dark:bg-neutral-0
+                                    px-4 py-2.5 text-xs font-poppins text-neutral-8
+                                    outline-none focus:border-primary-1 focus:ring-2 focus:ring-primary-5
+                                    transition-all cursor-pointer
+                                "
+                            >
+                                <option value="draft">Brouillon</option>
+                                <option value="ongoing">Active</option>
+                                <option value="paused">En pause</option>
+                                <option value="ended">Terminée</option>
+                            </select>
+                        </div>
+
+                        {/* Image */}
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold font-poppins text-neutral-8 dark:text-neutral-8">
+                                Image{' '}
+                                <span className="text-neutral-5 font-normal">(optionnel)</span>
+                            </label>
+
+                            {preview ? (
+                                <div className="relative rounded-2 overflow-hidden border border-neutral-4">
+                                    <img
+                                        src={preview}
+                                        alt="aperçu"
+                                        className={`w-full h-40 object-cover transition-opacity ${uploadingImage ? 'opacity-50' : 'opacity-100'}`}
+                                    />
+                                    {uploadingImage && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-neutral-8/20">
+                                            <div className="flex items-center gap-2 bg-neutral-0 rounded-full px-3 py-1.5 shadow">
+                                                <div className="w-3 h-3 border-2 border-primary-1 border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-[11px] font-poppins text-neutral-8">Upload en cours…</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {!uploadingImage && (
+                                        <button
+                                            type="button"
+                                            onClick={removeImage}
+                                            className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-neutral-8/60 hover:bg-danger-1 rounded-full text-white transition-colors cursor-pointer"
+                                        >
+                                            <Trash2 size={13} />
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => imageRef.current?.click()}
+                                    className="
+                                        w-full h-32 rounded-2 border-2 border-dashed border-neutral-4
+                                        flex flex-col items-center justify-center gap-2
+                                        text-neutral-5 hover:border-primary-1 hover:text-primary-1
+                                        hover:bg-primary-5 transition-all duration-200 cursor-pointer
+                                    "
+                                >
+                                    <ImageIcon size={22} />
+                                    <span className="text-xs font-poppins">Cliquer pour ajouter une image</span>
+                                </button>
+                            )}
+                            <input
+                                ref={imageRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleImageSelect}
                             />
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-4 dark:border-neutral-4 shrink-0">
+                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-4 shrink-0">
                         <Button variant="ghost" size="normal" onClick={onClose}>Annuler</Button>
-                        <Button variant="primary" size="normal" loading={loading} onClick={handleSubmit}>
-                            {isEdit ? 'Enregistrer' : 'Créer la campagne'}
+                        <Button
+                            variant="primary"
+                            size="normal"
+                            loading={loading || uploadingImage}
+                            onClick={handleSubmit}
+                        >
+                            {isEdit ? 'Enregistrer' : 'Créer la publicité'}
                         </Button>
                     </div>
                 </div>
